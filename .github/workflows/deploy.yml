@@ -12,11 +12,18 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout repository
+      - name: Checkout root workspace
         uses: actions/checkout@v4
         with:
-          submodules: recursive # Fetch all submodules (frontends, packages, plugins)
+          repository: kc-fallum/root # Wir checken das Root-Repo aus, damit alle Services als Submodule geladen werden
+          submodules: recursive
           fetch-depth: 0
+          # token: ${{ secrets.PAT }} # HINWEIS: Falls eure Repos private sind, musst du hier ein Personal Access Token verwenden!
+
+      - name: Checkout docs repository explicitly
+        uses: actions/checkout@v4
+        with:
+          path: docs # Überschreibt den docs Submodul-Ordner mit dem aktuellsten Code dieses Repos
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,13 +37,15 @@ jobs:
           java-version: '21'
 
       - name: Install dependencies
+        working-directory: ./docs
         run: npm ci
 
       - name: Build Docs (JavaDoc + TypeDoc + Docusaurus)
+        working-directory: ./docs
         run: npm run build:docs
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+          publish_dir: ./docs/build
