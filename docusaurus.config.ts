@@ -16,15 +16,15 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://your-docusaurus-site.example.com',
+  url: 'https://kc-fallum.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/docs/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'kc-fallum', // Usually your GitHub org/user name.
+  projectName: 'docs', // Usually your repo name.
 
   onBrokenLinks: 'throw',
 
@@ -93,13 +93,13 @@ const config: Config = {
           label: 'Documentation & API',
         },
         {
-          href: '/javadoc/kcfallum-api/index.html',
+          href: 'pathname:///docs/javadoc/kcfallum-api/index.html',
           label: 'KCFallum API (JavaDoc)',
           position: 'left',
           target: '_blank',
         },
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/kc-fallum',
           label: 'GitHub',
           position: 'right',
         },
@@ -143,7 +143,7 @@ const config: Config = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
+              href: 'https://github.com/kc-fallum',
             },
           ],
         },
