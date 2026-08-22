@@ -18,7 +18,7 @@ jobs:
           repository: kc-fallum/root # Wir checken das Root-Repo aus, damit alle Services als Submodule geladen werden
           submodules: recursive
           fetch-depth: 0
-          # token: ${{ secrets.PAT }} # HINWEIS: Falls eure Repos private sind, musst du hier ein Personal Access Token verwenden!
+          token: ${{ secrets.GH_PAT }} # BENÖTIGT: GitHub Personal Access Token mit 'repo' Rechten
 
       - name: Checkout docs repository explicitly
         uses: actions/checkout@v4
