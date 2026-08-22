@@ -20,17 +20,13 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }} # BENÖTIGT: GitHub Personal Access Token mit 'repo' Rechten
 
-      - name: Clone missing Minecraft Plugins
-        run: |
-          mkdir -p game/plugins
-          cd game/plugins
-          git clone https://${{ secrets.GH_PAT }}@github.com/kc-fallum/plugins.git bridge || echo "Failed to clone plugins wrapper"
-          cd bridge
-          # Da die Unterprojekte anscheinend keine echten Submodule in 'plugins' sind, klonen wir sie manuell hinein:
-          rm -rf kcfallum-api kcfallum-bridge kcfallum-lobby
-          git clone https://${{ secrets.GH_PAT }}@github.com/kc-fallum/minecraft-kcfallum.git kcfallum-api || echo "Failed to clone API"
-          git clone https://${{ secrets.GH_PAT }}@github.com/kc-fallum/minecraft-bridge.git kcfallum-bridge || echo "Failed to clone Bridge"
-          git clone https://${{ secrets.GH_PAT }}@github.com/kc-fallum/minecraft-npc.git kcfallum-lobby || echo "Failed to clone Lobby"
+      - name: Checkout Minecraft Plugins Workspace
+        uses: actions/checkout@v4
+        with:
+          repository: kc-fallum/plugins
+          path: game/plugins/bridge
+          submodules: recursive
+          token: ${{ secrets.GH_PAT }} # Wird benötigt, falls die Plugins privat sind
 
       - name: Checkout docs repository explicitly
         uses: actions/checkout@v4
