@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: kc-fallum/plugins
-          path: game/plugins/bridge
+          path: game/plugins
           submodules: recursive
           token: ${{ secrets.GH_PAT }} # Wird benötigt, falls die Plugins privat sind
 
@@ -51,8 +51,6 @@ jobs:
       - name: Build JavaDocs
         working-directory: ./game/plugins/bridge
         run: |
-          pwd
-          ls -la
           chmod +x gradlew
           sed -i 's/\r$//' gradlew
           ./gradlew :kcfallum-api:javadoc
