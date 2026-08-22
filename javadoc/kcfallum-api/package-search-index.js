@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"de.kcfallum.api.client"},{"l":"de.kcfallum.api.model"},{"l":"de.kcfallum.api.rabbitmq"}];updateSearchResults();

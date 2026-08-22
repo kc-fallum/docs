@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"de.kcfallum.bridge","l":"BridgePlugin"}];updateSearchResults();

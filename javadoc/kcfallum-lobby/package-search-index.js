@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"de.kcfallum.lobby"},{"l":"de.kcfallum.lobby.command"},{"l":"de.kcfallum.lobby.npc"}];updateSearchResults();

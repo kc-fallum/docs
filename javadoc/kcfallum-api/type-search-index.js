@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"de.kcfallum.api.client","l":"ActionRequest"},{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"de.kcfallum.api.client","l":"GameServerClient"},{"p":"de.kcfallum.api.client","l":"InstanceResponse"},{"p":"de.kcfallum.api.rabbitmq","l":"RabbitMqManager"},{"p":"de.kcfallum.api.model","l":"ServerData"}];updateSearchResults();
