@@ -48,9 +48,25 @@ jobs:
         working-directory: ./docs
         run: npm ci
 
-      - name: Build Docs (JavaDoc + TypeDoc + Docusaurus)
+      - name: Build JavaDocs
+        working-directory: ./game/plugins/bridge
+        run: |
+          chmod +x gradlew
+          sed -i 's/\r$//' gradlew
+          ./gradlew :kcfallum-api:javadoc
+          ./gradlew :kcfallum-bridge:javadoc || true
+          ./gradlew :kcfallum-lobby:javadoc || true
+
+      - name: Copy JavaDocs to Docusaurus Static Folder
+        run: |
+          mkdir -p docs/static/javadoc/kcfallum-api docs/static/javadoc/kcfallum-bridge docs/static/javadoc/kcfallum-lobby
+          cp -r game/plugins/bridge/kcfallum-api/build/docs/javadoc/* docs/static/javadoc/kcfallum-api/ || true
+          cp -r game/plugins/bridge/kcfallum-bridge/build/docs/javadoc/* docs/static/javadoc/kcfallum-bridge/ || true
+          cp -r game/plugins/bridge/kcfallum-lobby/build/docs/javadoc/* docs/static/javadoc/kcfallum-lobby/ || true
+
+      - name: Build Docusaurus (with TypeDoc)
         working-directory: ./docs
-        run: npm run build:docs
+        run: npm run build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
