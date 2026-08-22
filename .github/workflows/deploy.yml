@@ -51,6 +51,8 @@ jobs:
       - name: Build JavaDocs
         working-directory: ./game/plugins/bridge
         run: |
+          pwd
+          ls -la
           chmod +x gradlew
           sed -i 's/\r$//' gradlew
           ./gradlew :kcfallum-api:javadoc
