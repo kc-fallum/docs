@@ -20,6 +20,14 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }} # BENÖTIGT: GitHub Personal Access Token mit 'repo' Rechten
 
+      - name: Clone missing Minecraft Plugins
+        run: |
+          mkdir -p game/plugins/bridge
+          cd game/plugins/bridge
+          git clone https://${{ secrets.GH_PAT }}@github.com/kc-fallum/minecraft-kcfallum.git kcfallum-api || echo "Failed to clone API"
+          git clone https://${{ secrets.GH_PAT }}@github.com/kc-fallum/minecraft-bridge.git kcfallum-bridge || echo "Failed to clone Bridge"
+          git clone https://${{ secrets.GH_PAT }}@github.com/kc-fallum/minecraft-npc.git kcfallum-lobby || echo "Failed to clone Lobby"
+
       - name: Checkout docs repository explicitly
         uses: actions/checkout@v4
         with:
