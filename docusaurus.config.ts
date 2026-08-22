@@ -1,12 +1,13 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
+import { getTypedocPlugins } from './typedoc-plugins';
 import type * as Preset from '@docusaurus/preset-classic';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'My Site',
-  tagline: 'Dinosaurs are cool',
+  title: 'KCFallum Docs',
+  tagline: 'Zentrale Dokumentation',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -68,6 +69,10 @@ const config: Config = {
     ],
   ],
 
+  plugins: [
+    ...getTypedocPlugins()
+  ],
+
   themeConfig: {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
@@ -85,9 +90,14 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Tutorial',
+          label: 'Documentation & API',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
+        {
+          href: '/javadoc/kcfallum-api/index.html',
+          label: 'KCFallum API (JavaDoc)',
+          position: 'left',
+          target: '_blank',
+        },
         {
           href: 'https://github.com/facebook/docusaurus',
           label: 'GitHub',
