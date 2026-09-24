@@ -18,7 +18,7 @@ jobs:
           repository: kc-fallum/root # Wir checken das Root-Repo aus, damit alle Services als Submodule geladen werden
           submodules: recursive
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }} # BENÖTIGT: GitHub Personal Access Token mit 'repo' Rechten
+          token: ${{ github.token }}
 
       - name: Checkout Minecraft Plugins Workspace
         uses: actions/checkout@v4
