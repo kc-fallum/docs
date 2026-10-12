@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "ci:deploy": "git commit --allow-empty -m \"ci: trigger deploy pipeline\" && git push",
+    "ci": "git commit --allow-empty -m \"ci: trigger deploy pipeline\" && git push",
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "docusaurus build",
