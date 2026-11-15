@@ -1,0 +1,53 @@
+---
+title: "Transaction Service: Übersicht & Architektur"
+description: Architektur, Kassenbuch-Führung und Cross-Service Belegdelegation des backend-transaction Microservice
+sidebar_position: 1
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import IndexRoutesSource from '../../../../backend/backend-transaction/src/routes/index.routes.ts?raw';
+
+# Transaction Service (`backend-transaction`)
+
+Der **Transaction Service** ist das buchhalterische Kontrollorgan der Plattform. Er verwaltet das revisionssichere Kassenbuch des Vereins, dokumentiert alle Ein- und Auszahlungen und delegiert Beleg-Uploads synchron an den Media Service.
+
+---
+
+## 1. Aufgaben & Architektur-Besonderheiten
+
+* **Revisionssichere Buchungssätze:** Jede finanzielle Bewegung (Beitragseingang, Bar-Einzahlung, Auslagen für Bahnmiete oder Pokale) wird als unveränderliche `TransactionEntity` festgeschrieben.
+* **Keine eigene Dateispeicherung (Cross-Service Delegation):** Der Dienst besitzt absichtlich keine direkte S3-Anbindung. Werden Belege hochgeladen, delegiert der Service die Rohdaten über den `documentClient` aus `@kc-fallum/backend-lib` per HTTP-Multipart-Aufruf an das `backend-media`.
+* **Kassensaldo & Audit:** Berechnet aktuelle Kassenbestände und ermöglicht Wirtschaftsprüfungen durch die Kassenprüfer.
+* **Google Sheets Integration:** Synchronisiert historische Buchungssätze mit der Buchhaltungs-Tabelle `tabellenblatt11`.
+
+---
+
+## 2. Der Cross-Service Beleg-Upload-Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Kassenwart
+    participant Trans as backend-transaction
+    participant Media as backend-media (REST)
+    participant S3 as MinIO (Bucket)
+    participant DB as transaction DB
+
+    Admin->>Trans: POST /transaction (mit Beleg-Datei)
+    Trans->>Trans: Validiere Betrag, Datum & Kategorie
+    Trans->>Media: documentClient.upload(file.buffer)
+    Media->>S3: PutObjectCommand()
+    Media-->>Trans: 201 Created (documentId: "uuid-123")
+    Trans->>DB: Speichere TransactionEntity (belegId = "uuid-123")
+    Trans-->>Admin: 201 Created (Transaktion verbucht)
+```
+
+---
+
+## 3. Routen-Übersicht & Index-Schalthebel
+
+Die Datei `src/routes/index.routes.ts` bündelt alle Buchungsendpunkte:
+
+<CodeBlock language="typescript" title="backend/backend-transaction/src/routes/index.routes.ts">
+  {IndexRoutesSource}
+</CodeBlock>

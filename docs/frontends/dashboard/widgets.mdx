@@ -1,0 +1,42 @@
+---
+title: "Dashboard: Widgets & UI-Komponenten"
+description: Übersicht aller lokalen und geteilten Widgets, die im Dashboard für Tabellen, Layouts und Profilkarten verwendet werden
+sidebar_position: 4
+---
+
+# Dashboard: Widgets & UI-Komponenten
+
+Das Dashboard verwendet eine Kombination aus geteilten Standard-Widgets aus `@kc-fallum/components` und hochspezialisierten lokalen Widgets unter `src/components/widgets/`.
+
+---
+
+## 1. Lokale Dashboard-Widgets (`src/components/widgets/`)
+
+### 1.1 Tastatur-optimierte Tabelle (`widgets/table/`)
+Für schnelle Datenprüfungen und Spielabende optimiert:
+* **Tastaturnavigation (`table-keyboard.utils.ts`):** Erlaubt das Navigieren zwischen Zeilen und Spalten über Pfeiltasten (`ArrowUp`, `ArrowDown`, `Enter`).
+* **Virtuelles Scrolling:** Ermöglicht flüssiges Rendern von hunderten historischen Strafbuchungen ohne Render-Einbrüche.
+* **Inline-Editing:** Ermöglicht Kassenwarten, Beträge oder Status direkt per Doppelklick zu bearbeiten.
+
+### 1.2 Profil-Karte (`widgets/profile-card/`)
+Kompakte Darstellung eines Spielers:
+* Zeigt Avatar, Vor- und Nachname, Rang (`VORSTAND`, `MITGLIED`, `GAST`) und die Summe offener Strafbeträge.
+* Bietet Aktions-Menüs zur Bearbeitung oder Deaktivierung.
+
+### 1.3 Blueprint-Widget (`widgets/blueprint/`)
+Schablone zur schnellen Erstellung neuer wiederverwendbarer Darstellungsblöcke im Dashboard.
+
+---
+
+## 2. Geteilte Standard-Widgets (`@kc-fallum/components`)
+
+Jede Seite im Dashboard bindet verbindlich die Basis-Widgets des Gesamtsystems ein:
+
+| Widget | Tag | Zweck im Dashboard |
+|---|---|---|
+| **Page Layout** | `<page-layout>` | Einheitlicher Rahmen jeder Seite mit Kopfzeile, Titel, Breadcrumbs, Action-Buttons und Floating Action Button (FAB). |
+| **Error Widget** | `<error-widget>` | Zwingender Render-Zustand bei fehlgeschlagenen `Task`-Aufrufen oder unzureichenden Rechten (`accessDenied`). |
+| **Skeleton Widget** | `<skeleton-widget>` | Zwingender Ladezustand (`pending`) mit konfigurierbarer Zeilenanzahl (`rows="5"`). |
+| **Notification Widget** | `<notification-widget>` | Globaler Toast-Container in `app-root` zur Darstellung von `NotificationHandler`-Nachrichten. |
+| **Button Input** | `<button-input>` | Barrierefreier Standard-Button mit Varianten (`primary`, `secondary`, `outline`, `danger`) und Icon-Slots. |
+| **Sidebar & Header** | `<sidebar-widget>`, `<header-widget>` | Globale Navigation mit Ausklapp-Menü, Theme-Toggle und Benutzer-Profil. |

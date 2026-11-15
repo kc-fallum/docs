@@ -1,0 +1,8 @@
+{
+  "label": "Auth & Identity Service",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Zentraler Identity Provider, OIDC-Server, WebAuthn/Passkeys, Passport OAuth und Berechtigungsverwaltung"
+  }
+}

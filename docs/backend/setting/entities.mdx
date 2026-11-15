@@ -1,0 +1,26 @@
+---
+title: "Settings Service: Entitäten & Datenmodell"
+description: Live-Import und Dokumentation der SettingEntity der settings-Datenbank
+sidebar_position: 2
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import SettingSource from '../../../../backend/backend-setting/src/models/entities/setting.entity.ts?raw';
+
+# Settings Entitäten (`settings` DB)
+
+Der Settings Service speichert benutzerspezifische Einstellungen und Push-Abonnements in der relationalen Datenbank `settings`.
+
+---
+
+## 1. `SettingEntity`
+Hält Benachrichtigungspräferenzen und WebPush-Subscriptions eines Benutzers fest.
+
+* **Felder:**
+  * `userId`: Eindeutige ID des Benutzers aus dem Auth-Service.
+  * `subscription`: JSONB-Feld zur Ablage des Browser-spezifischen WebPush-Payloads (`endpoint`, `p256dh`, `auth`).
+  * `notificationChannels`: Konfiguration aktiver Benachrichtigungskanäle (E-Mail, WebPush, Sound).
+
+<CodeBlock language="typescript" title="backend/backend-setting/src/models/entities/setting.entity.ts">
+  {SettingSource}
+</CodeBlock>

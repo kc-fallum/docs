@@ -1,0 +1,48 @@
+---
+title: "Media Service: Konfigurations-Referenz"
+description: Detaillierte Aufschlüsselung aller Config-Dateien und Umgebungsvariablen von backend-media
+sidebar_position: 4
+---
+
+# Media Service: Konfigurations-Referenz
+
+Dieses Dokument bietet eine vollständige Referenz aller Konfigurationsdateien und Umgebungsvariablen des `backend-media`.
+
+---
+
+## 1. Konfigurationsdateien im Detail
+
+### 1.1 `config/s3.config.ts`
+Initialisiert die Clients für den MinIO S3-kompatiblen Objektspeicher:
+* **Interner Client (`s3Client`):** Kommuniziert über das interne Docker-Netzwerk direkt mit dem Container `minio:9000` via `MINIO_INTERNAL_ENDPOINT`.
+* **Externer Presign-Client (`s3PresignClient`):** Verwendet `MINIO_EXTERNAL_ENDPOINT` (z. B. `https://s3.kcfallum.de`), damit die generierten signierten URLs aus dem Browser des Endanwenders erreichbar sind.
+* **`generatePresignedUrl(key)`:** Signiert `GetObjectCommand` mit einer Gültigkeitsdauer von 3600 Sekunden (1 Stunde).
+* **`forcePathStyle: true`:** Notwendig für MinIO, da MinIO Pfad-basiertes Routing (`http://minio:9000/kcfallum-media/...`) statt Subdomain-basiertes Virtual Hosting (`http://kcfallum-media.minio:9000/...`) verwendet.
+
+---
+
+### 1.2 Multer- und Bildverarbeitungs-Konfiguration
+* **Storage:** Verwendet strikt `multer.memoryStorage()`, um Dateien im Arbeitsspeicher (`Buffer`) zu verarbeiten, bevor sie via Stream an MinIO gesendet werden.
+* **Dateigrößen-Limits:**
+  * Maximale Bildgröße: 20 MB pro Bild.
+  * Maximale Beleggröße: 15 MB pro Dokument.
+* **MIME-Type Whitelist:** Erlaubt `image/jpeg`, `image/png`, `image/webp` und `application/pdf`.
+
+---
+
+## 2. Umgebungsvariablen (`.env`)
+
+| Variable | Erforderlich | Standard | Beschreibung |
+|---|---|---|---|
+| `PORT` | Nein | `3002` | HTTP-Port für Media-Service |
+| `DB_HOST` | Ja | – | Hostname der PostgreSQL-Instanz |
+| `DB_PORT` | Nein | `5432` | PostgreSQL-Port |
+| `DB_DATABASE` | Ja | `media` | Name der relationalen Media-Datenbank |
+| `DB_USERNAME` | Ja | – | PostgreSQL-Benutzer |
+| `DB_PASSWORD` | Ja | – | PostgreSQL-Passwort |
+| `MINIO_INTERNAL_ENDPOINT` | Ja | `http://minio:9000` | Interne Docker-Netzwerk-URL zu MinIO |
+| `MINIO_EXTERNAL_ENDPOINT` | Ja | `https://s3.kcfallum.de` | Öffentliche Domain für Presigned URLs |
+| `MINIO_BUCKET_NAME` | Nein | `kcfallum-media` | Name des Standard-S3-Buckets |
+| `MINIO_ROOT_USER` | Ja | – | MinIO Admin-Benutzer / Access Key |
+| `MINIO_ROOT_PASSWORD` | Ja | – | MinIO Admin-Passwort / Secret Key |
+| `JWT_SECRET` | Ja | – | Shared Secret zur Validierung von Session-Tokens |

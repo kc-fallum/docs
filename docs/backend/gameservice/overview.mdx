@@ -1,0 +1,67 @@
+---
+title: "Gameservice: Übersicht & Architektur"
+description: Architektur, Dockerode-Orchestrierung und Minecraft-Server-Lifecycle des backend-gameservice
+sidebar_position: 1
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import IndexRoutesSource from '../../../../backend/backend-gameservice/src/routes/index.routes.ts?raw';
+
+# Gameservice (`backend-gameservice`)
+
+Der **Gameservice** ist der Infrastruktur- und Orchestrierungsdienst für Gaming-Instanzen (insbesondere PaperMC/Minecraft). Er kommuniziert über den Docker-Host-Socket direkt mit dem Docker-Daemon (`dockerode`), steuert Spieleserver per **RCON-Protokoll**, streamt interaktive Konsolenausgaben über WebSockets und sichert Welten automatisiert via **Restic**.
+
+---
+
+## 1. Aufgaben & Infrastruktur-Integration
+
+* **Dockerode Host-Steuerung:** Bindet `/var/run/docker.sock` ein, um Container (`itzg/minecraft-server`) dynamisch zu starten, zu stoppen und Ressourcenlimits (CPU, RAM bis max. 10 GB) zu erzwingen.
+* **RCON Echtzeit-Steuerung:** Führt administrative Befehle (`op`, `whitelist`, `gamerule`, `say`) synchron auf dem Minecraft-Server aus.
+* **Interaktives Konsolen-Streaming:** Streamt stdout/stderr des Docker-Containers in Echtzeit über Socket.io an das Frontend und erlaubt interaktive Eingaben.
+* **Restic Snapshot-Backups:** Führt differenzielle, verschlüsselte Sicherungen in den MinIO-Bucket `kcfallum-gameserver` aus.
+* **Beszel Telemetrie:** Ruft Auslastungsdaten (CPU, RAM, I/O) der Gaming-Container über die Beszel-API ab.
+* **Velocity- & Geyser/Floodgate-Injektion:** Injiziert kryptografische Secrets für den Velocity-Proxy und Bedrock-Crossplay.
+
+---
+
+## 2. Die Orchestrierungs-Architektur
+
+```mermaid
+flowchart TD
+    subgraph Client ["Frontend"]
+        DASH["Gameserver Dashboard<br/>Lit Web Components"]
+    end
+
+    subgraph Gameservice ["backend-gameservice"]
+        ORCH["InstanceService<br/>Lifecycle Controller"]
+        RCON["ConsoleService<br/>RCON Client"]
+        RESTIC["BackupService<br/>Restic Snapshot Runner"]
+        BESZEL["BeszelService<br/>Telemetry Collector"]
+    end
+
+    subgraph Host ["Docker Host / Daemon"]
+        SOCK["/var/run/docker.sock"]
+        CONT["Game Container<br/>itzg/minecraft-server"]
+    end
+
+    subgraph Storage ["Objektspeicher"]
+        MINIO["MinIO Bucket<br/>kcfallum-gameserver"]
+    end
+
+    DASH <-->|WebSocket Console| Gameservice
+    ORCH -->|dockerode API| SOCK
+    SOCK -->|Spawnt / Stoppt| CONT
+    RCON <-->|RCON Port 25575| CONT
+    RESTIC -->|Snapshot Push| MINIO
+    BESZEL -->|Metriken| DASH
+```
+
+---
+
+## 3. Routen-Übersicht & Index-Schalthebel
+
+Die Datei `src/routes/index.routes.ts` bündelt alle Endpunkte für Instanzen, Konsolen, Backups und Konfigurationen:
+
+<CodeBlock language="typescript" title="backend/backend-gameservice/src/routes/index.routes.ts">
+  {IndexRoutesSource}
+</CodeBlock>

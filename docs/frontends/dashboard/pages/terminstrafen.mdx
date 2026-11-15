@@ -1,0 +1,88 @@
+---
+title: "Terminstrafen-Page"
+description: Detaillierte Dokumentation des Live-Kegelabend-Strafenmanagements (terminstrafen.page.ts, strafen.utils.ts)
+sidebar_position: 10
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import TerminstrafenPageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/terminstrafen/terminstrafen.page.ts?raw';
+import TerminstrafenCssSource from '../../../../../frontend/frontend-dashboard/src/components/pages/terminstrafen/terminstrafen.page.css?raw';
+import StrafenUtilsSource from '../../../../../frontend/frontend-dashboard/src/components/pages/terminstrafen/strafen.utils.ts?raw';
+import TerminstrafenSpecSource from '../../../../../frontend/frontend-dashboard/src/components/pages/terminstrafen/terminstrafen.page.spec.ts?raw';
+
+# Terminstrafen-Page (`src/components/pages/terminstrafen/`)
+
+Die **Terminstrafen-Page** (`<terminstrafen-page>`) ist das Herzstück des aktiven Kegelabends. Sie stellt eine dynamische Matrix aus anwesenden Spielern und Strafenkatalog-Posten bereit, auf der Strafen während des Kegelns in Echtzeit per Klick oder Tastatur gezählt und synchronisiert werden.
+
+---
+
+## 1. Dateistruktur der Terminstrafen-Domäne
+
+```text
+src/components/pages/terminstrafen/
+├── terminstrafen.page.ts       # Hauptkomponente (Live-Matrix, Blueprint-Modus, Task)
+├── terminstrafen.page.css      # Layout für Vollbild-Matrix und fixierte Header
+├── strafen.utils.ts            # Helper-Funktionen (resolveId, isFixedAmount)
+├── terminstrafen.page.spec.ts  # Integrationstests für Matrix-Events & Moduswechsel
+└── (src/services/terminstrafen.service.ts) # Reaktiv-State-Holder mit Subscriber-Pattern
+```
+
+---
+
+## 2. Wie die Page gerendert wird (Task & Reaktivitätszyklus)
+
+Die Komponente kapselt die Dateninitialisierung in einem `@lit/task`:
+
+```typescript
+private initialize = new Task(this, {
+  task: async ([terminId]) => {
+    const [termin, allKataloge, allSpieler] = await Promise.all([
+      terminClient.getTerminById(terminId),
+      katalogClient.getAllKatalog(),
+      spielerClient.getAllSpieler()
+    ]);
+    // Sortierung der anwesenden Spieler und Übergabe an den Service
+    this.service.init(terminId, termin, ...);
+    return { termin, allKataloge, allSpieler };
+  },
+  args: () => [this.terminId]
+});
+```
+
+* **Service-Subskription:** `connectedCallback()` abonniert Änderungen des `TerminstrafenService`. Bei jeder Zählung (`increment`, `decrement`) triggert der Service ein Re-Render der Zelle.
+* **Dual-View-Modus (`view: Mode`):**
+  * `live`: Rendert `<strafen-table>` – die interaktive Zähltabelle für den Spielabend.
+  * `blueprint`: Rendert `<blueprint-widget>` – Visualisierung der Bahnaufstellung oder statistischer Auswertungen.
+* **Excel/Spreadsheet-Export:** Über den Action-Header kann mit `spreadsheetService.exportTermin(terminId)` ein Spielbericht als Tabellendokument exportiert werden.
+
+---
+
+## 3. Helper-Funktionen (`strafen.utils.ts`)
+
+<CodeBlock language="typescript" title="src/components/pages/terminstrafen/strafen.utils.ts" showLineNumbers>
+  {StrafenUtilsSource}
+</CodeBlock>
+
+---
+
+## 4. Live-Code: `terminstrafen.page.ts`
+
+<CodeBlock language="typescript" title="src/components/pages/terminstrafen/terminstrafen.page.ts" showLineNumbers>
+  {TerminstrafenPageSource}
+</CodeBlock>
+
+---
+
+## 5. Live-Code: `terminstrafen.page.css`
+
+<CodeBlock language="css" title="src/components/pages/terminstrafen/terminstrafen.page.css" showLineNumbers>
+  {TerminstrafenCssSource}
+</CodeBlock>
+
+---
+
+## 6. Live-Code: `terminstrafen.page.spec.ts`
+
+<CodeBlock language="typescript" title="src/components/pages/terminstrafen/terminstrafen.page.spec.ts" showLineNumbers>
+  {TerminstrafenSpecSource}
+</CodeBlock>

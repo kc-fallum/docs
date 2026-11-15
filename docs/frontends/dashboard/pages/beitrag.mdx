@@ -1,0 +1,39 @@
+---
+title: "Beitrags-Page"
+description: Detaillierte Dokumentation der Monatsbeitragsverwaltung mit Heatmap-Widget (beitrag.page.ts)
+sidebar_position: 7
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import BeitragPageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/beitrag/beitrag.page.ts?raw';
+
+# Beitrags-Page (`src/components/pages/beitrag/`)
+
+Die **Beitrags-Page** (`<beitrag-page>`) visualisiert und verwaltet die monatlichen Mitgliedsbeiträge der Vereinsspieler mittels einer interaktiven Heatmap.
+
+---
+
+## 1. Die Dateien der Beitrags-Domäne
+
+```text
+src/components/pages/beitrag/
+├── beitrag.page.ts        # Page-Komponente mit Task & Heatmap
+├── beitrag.page.css       # Heatmap- und Beitragsraster-Styles
+└── beitrag.page.spec.ts   # Komponententests
+```
+
+---
+
+## 2. Rendering & Heatmap-Visualisierung
+
+* **Lade-Task:** Ruft Beitragsdaten über `beitragClient.getBeitraege()` und aktive Spieler über `spielerClient.getAllSpieler()` ab.
+* **Heatmap-Widget (`<heatmap-widget>`):** Stellt alle Monate des Kalenderjahres pro Spieler farblich dar (Grün: Bezahlt, Rot: Offen, Grau: Befreit).
+* **Direktes Umschalten:** Klick auf eine Heatmap-Zelle toggelt den Status und aktualisiert den Datensatz über `beitragClient.updateBeitrag()`.
+
+---
+
+## 3. Live-Code: `beitrag.page.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/beitrag/beitrag.page.ts">
+  {BeitragPageSource}
+</CodeBlock>

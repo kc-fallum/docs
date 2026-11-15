@@ -1,0 +1,36 @@
+---
+title: "Client: Interaktive Widgets"
+description: Dokumentation aller spezialisierten Widgets im Client-Portal (Glücksrad, Siegerpodest, Countdown, Charts)
+sidebar_position: 3
+---
+
+# Client: Interaktive Widgets
+
+Das Client-Frontend enthält eine Reihe spezialisierter interaktiver Komponenten unter `src/components/widgets/`:
+
+---
+
+## 1. Gamification- & Interaktions-Widgets
+
+### 1.1 Glücksrad (`widgets/wheel/`)
+* **Funktion:** HTML5 Canvas-basiertes Glücksrad mit realistischer Physik-Drehung und Sound-Effekten.
+* **Einsatz:** Zufallsauslosung von Spielern für Sonderrunden, Getränkewetten oder Kegelspiele am Spieltag.
+
+### 1.2 Siegerpodest (`widgets/podium/`)
+* **Funktion:** Dreistufiges 3D-animiertes Podest (Gold, Silber, Bronze) auf der Ranking-Seite.
+* **Einsatz:** Würdigt die erfolgreichsten Werfer der laufenden Saison.
+
+### 1.3 Countdown (`widgets/countdown/`)
+* **Funktion:** Live-Zeitmesser, der Tage, Stunden, Minuten und Sekunden bis zum nächsten Kegelabend herunterzählt.
+
+---
+
+## 2. Fachliche Termin- & Statistik-Widgets
+
+| Widget | Pfad | Funktion |
+|---|---|---|
+| **Next Termin** | `widgets/nextTermin/` | Zeigt Datum, Ort, Uhrzeit und Anmeldestatus des kommenden Termins direkt auf der Startseite an. |
+| **Last Termin** | `widgets/lastTermin/` | Rückblick auf den vorangegangenen Abend inklusive Pumpenkönig-Krone und Gesamtergebnis. |
+| **Attendance** | `widgets/attendance/` | Schnelle Ein-Klick-Anmeldung („Ich bin dabei“) oder Abmeldung („Ich fehle“) mit Begründung. |
+| **Standing** | `widgets/standing/` | Kompakte Platzierungsübersicht für die Schnellansicht im mobilen Viewport. |
+| **Charts** | `widgets/barchart/`, `widgets/donutchart/` | Chart.js-Integrationen zur Veranschaulichung der Strafverteilung und Anwesenheitsquote. |

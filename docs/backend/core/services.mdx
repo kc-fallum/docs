@@ -1,0 +1,89 @@
+---
+title: "Core Service: Service-Klassen & Business-Logik"
+description: Detaillierte Übersicht aller 8 Service-Klassen des backend-core und deren Abhängigkeiten
+sidebar_position: 3
+---
+
+# Core Service: Service-Klassen & Logik
+
+Die Business-Logik des Core Service ist in 8 spezialisierten Service-Klassen gekapselt. Alle Services erhalten ihre Abhängigkeiten (DAOs, Sub-Services, Socket-Broadcaster) über **Constructor Dependency Injection** in `src/db.ts`.
+
+---
+
+## 1. `TerminService`
+Verwaltet den gesamten Lebenszyklus von Kegelabenden.
+
+* **Zuständigkeit:**
+  * Erstellung neuer Termine mit Prüfung auf Datumsüberschneidungen.
+  * Bearbeitung von Ort, Start- und Endzeit.
+  * **Abschluss eines Termins (`closeTermin`):** Fixiert alle anwesenden Spieler, berechnet automatisch die "Unangemeldet nicht erschienen"-Strafen für fehlende Spieler ohne rechtzeitige Absage und setzt `abgeschlossen = true`.
+  * Sendet ein `TERMIN_CLOSED`-Event über Socket.io an verbundene Clients.
+
+---
+
+## 2. `AbsageService`
+Handhabt Spielerabmeldungen zu Terminen.
+
+* **Zuständigkeit:**
+  * Prüft die Frist (standardmäßig 24 Stunden vor Beginn des Termins).
+  * Berechnet `fristGerecht: boolean`.
+  * Sofern eine Absage nach Fristablauf eingeht, erzeugt der Service automatisch eine entsprechende Verspätungsstrafe im `StrafenService`.
+
+---
+
+## 3. `StrafenService`
+Verarbeitet das Erfassen und Bezahlen von Vereinsstrafen.
+
+* **Zuständigkeit:**
+  * Buchung von Einzel- und Gruppenstrafen.
+  * Ermittelt über den `KatalogService` den gültigen Stückpreis.
+  * Markiert Strafen als bezahlt oder storniert fehlerhafte Buchungen.
+  * Triggert Socket-Events (`STRAFE_CREATED`, `STRAFE_DELETED`) für die Live-Anzeige am Kegel-Dashboard.
+
+---
+
+## 4. `KatalogService`
+Verwaltet den verbindlichen Strafen- und Spielkatalog.
+
+* **Zuständigkeit:**
+  * CRUD für Katalogeinträge.
+  * Kategorisierung nach Typ (`KEGEL`, `SPIEL`, `SONSTIGES`).
+  * Konfiguration von Symbolen (Icons) und Farben für die UI-Darstellung.
+
+---
+
+## 5. `KasseService`
+Führt die konsolidierte Vereinsrechnung.
+
+* **Zuständigkeit:**
+  * Aggregiert alle offenen und bezahlten Strafen, Monatsbeiträge sowie manuelle Kassenbewegungen.
+  * Berechnet den aktuellen Kassen-Ist-Stand.
+  * Stellt historische Kassenverläufe für Jahresübersichten bereit.
+
+---
+
+## 6. `BeitragService`
+Steuert die monatliche Beitragserhebung der Vereinsmitglieder.
+
+* **Zuständigkeit:**
+  * Generiert zu Monatsbeginn für alle aktiven Spieler einen `BeitragEntity`.
+  * Verarbeitet Zahlungseingänge und Mahnstufen.
+  * Erlaubt administrative Beitragsbefreiungen.
+
+---
+
+## 7. `SpielerService`
+Hält die lokalen Spielerreferenzen synchron.
+
+* **Zuständigkeit:**
+  * Hört auf RabbitMQ-Events von `backend-auth` (`events.profile.created`, `events.profile.updated`).
+  * Aktualisiert Vorname, Nachname und Status des Spielers in der `kegelclub`-Datenbank.
+
+---
+
+## 8. `MigrationService`
+Verantwortlich für den initialen und periodischen Datenabgleich mit Google Spreadsheets.
+
+* **Zuständigkeit:**
+  * Liest Tabellenblätter wie `data_beitrag_monat` und `Strafenübersicht` über die Google Sheets API ein.
+  * Überführt Altdaten in relationale TypeORM-Entitäten unter Vermeidung von Duplikaten.

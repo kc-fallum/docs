@@ -1,0 +1,56 @@
+---
+title: "Media Service: Service-Klassen & Speicher-Logik"
+description: Detaillierte Übersicht aller 6 Service-Klassen des backend-media und deren S3-Speicherlogik
+sidebar_position: 3
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import StorageServiceSource from '../../../../backend/backend-media/src/services/storage.service.ts?raw';
+
+# Media Service: Service-Klassen
+
+Die Service-Ebene des Media Service kapselt alle Interaktionen mit dem MinIO S3-Bucket und der Sharp-Bildverarbeitung in 6 spezialisierten Klassen:
+
+---
+
+## 1. `StorageService` (S3-Speicher-Kern)
+Abstrahiert das AWS S3 SDK v3 und stellt Methoden für Dateioperationen bereit:
+* `upload(buffer, mimeType, key)`: Schreibt Bytes direkt in den Bucket `kcfallum-media`.
+* `getDownloadStream(key)`: Erzeugt einen lesbaren Stream.
+* `getPresignedUrl(key)`: Erzeugt signierte Einmal-Download-Links mit 60 Minuten Gültigkeit.
+* `delete(key)`: Entfernt Objekte sicher aus dem Objektspeicher.
+
+<CodeBlock language="typescript" title="backend/backend-media/src/services/storage.service.ts">
+  {StorageServiceSource}
+</CodeBlock>
+
+---
+
+## 2. `DocumentService` (Beleg- & Dokumentenverwaltung)
+Verarbeitet allgemeine Dokumente wie PDF-Dateien und Belege.
+* **Cross-Service Nutzung:** Wird direkt von `backend-transaction` über den `documentClient` angesprochen, um Buchungsbelege und Quittungen revisionssicher abzulegen.
+
+---
+
+## 3. `AvatarService`
+Zuständig für Benutzerprofilbilder:
+* Skaliert Bilder automatisch auf quadratische Standardmaße (256x256 px).
+* Wandelt Eingangsbilder verlustarm in WebP um.
+* Überschreibt alte Avatare bei Neuzuweisung.
+
+---
+
+## 4. `PictureService`
+Verarbeitet Galeriefotos der Vereins-Community:
+* Extrahiert Bildbreite und Bildhöhe über die Sharp-Metadaten.
+* Erzeugt automatisch ein kleines Thumbnail (400px Breite) für schnelle Ladezeiten in der Mobilansicht.
+
+---
+
+## 5. `AlbumService`
+Verwaltet Bildalben, setzt Titelbilder (`coverPictureId`) und organisiert Zuordnungen zwischen Bildern und Sammlungen.
+
+---
+
+## 6. `IconService`
+Verwaltet dynamische SVG- und PNG-Symbole für den Strafenkatalog und das UI-Theming.

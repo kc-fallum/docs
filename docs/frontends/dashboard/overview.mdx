@@ -1,0 +1,60 @@
+---
+title: "Dashboard: Übersicht & Routing-Architektur"
+description: Gesamtübersicht der Administrations-SPA, Routing-Tabelle aller 10 Domänen und Auth-Guards
+sidebar_position: 1
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import DashboardAppSource from '../../../../frontend/frontend-dashboard/src/components/app/app.ts?raw';
+
+# Dashboard Portal (`frontend-dashboard`)
+
+Das Submodul `frontend/frontend-dashboard` ist das zentrale Verwaltungs- und Administrationsportal des Kegelclubs unter `https://dashboard.kcfallum.de` (lokal Port 9090). Es steht ausschließlich autorisierten Vorstandsmitgliedern (Kassenwart, Strafenwart, Admin) zur Verfügung.
+
+---
+
+## 1. Zweck & Funktionsbereiche
+
+* **Finanzen & Kasse:** Kassenbuch-Snapshots, Buchungssätze, Beleg-Downloads und Saldenberechnung.
+* **Spieltags-Strafenerfassung (`/terminstrafen`):** Tastaturoptimierte Schnell-Eingabe während des laufenden Kegelabends.
+* **Termin-Management:** Planung, Vorziehen, Absagen und Abschließen von Kegelterminen mit automatischer Strafgenerierung.
+* **Strafenkatalog:** Verwaltung der verbindlichen Straf- und Spielregeln sowie Icons.
+* **Mitglieder- & Benutzerverwaltung:** Rollenvergabe, Verknüpfung von Google/Passkey-Benutzerkonten mit Vereinsspielern.
+* **API-Keys:** Verwaltung kryptografischer Maschinenschlüssel für Automatisierungen.
+* **Vereins-Design:** Live-Bearbeitung von CSS-Variablen (`variables.css`), Vereinsname und Clublogo.
+
+---
+
+## 2. Vollständige Routing-Tabelle
+
+Das Routing ist in `src/components/app/app.ts` definiert. Alle Routen nutzen Lazy-Loading über dynamische `import()`-Aufrufe im `enter`-Hook und prüfen granulare Berechtigungen:
+
+| Pfad | Komponente | Lazy-Import-Ziel | Erforderliche Berechtigung |
+|---|---|---|---|
+| `/` & `/kasse` | `<kasse-page>` | `../pages/kasse/kasse.page` | `corePermissions.hasPermission(user, "kasse", "view")` |
+| `/termin` | `<termin-page>` | `../pages/termin/termin.page` | `corePermissions.hasPermission(user, "termin", "view")` |
+| `/terminstrafen` | `<terminstrafen-page>` | `../pages/terminstrafen/terminstrafen.page` | `corePermissions.hasPermission(user, "strafe", "create")` |
+| `/strafen` | `<strafen-page>` | `../pages/strafen/strafen.page` | `corePermissions.hasPermission(user, "strafe", "view")` |
+| `/katalog` | `<katalog-page>` | `../pages/katalog/katalog.page` | `corePermissions.hasPermission(user, "katalog", "view")` |
+| `/beitrag` | `<beitrag-page>` | `../pages/beitrag/beitrag.page` | `corePermissions.hasPermission(user, "beitrag", "view")` |
+| `/spieler` | `<spieler-page>` | `../pages/spieler/spieler.page` | `authPermissions.hasPermission(user, "spieler", "view")` |
+| `/nutzer` | `<nutzer-page>` | `../pages/nutzer/nutzer.page` | `authPermissions.hasPermission(user, "nutzer", "view")` |
+| `/keys` | `<key-page>` | `../pages/keys/key.page` | `authPermissions.hasPermission(user, "apikey", "view")` |
+| `/setting` | `<setting-page>` | `../pages/setting/setting.page` | `corePermissions.hasPermission(user, "settings", "view")` |
+
+---
+
+## 3. Sicherheits- & Auth-Schranken
+
+Jede Route wird durch `await this.requireAuth()` geschützt:
+1. Prüft, ob `authHandler.isAuthenticated` wahr ist.
+2. Wenn nicht eingeloggt: Sofortige Weiterleitung zu `https://auth.kcfallum.de/users/login?redirect_uri=...`.
+3. Wenn eingeloggt, aber unzureichende Rechte: Rendern des `<error-widget>` („Zugriff verweigert“).
+
+---
+
+## 4. Live-Code: Dashboard-Root (`app.ts`)
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/app/app.ts">
+  {DashboardAppSource}
+</CodeBlock>

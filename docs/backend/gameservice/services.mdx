@@ -1,0 +1,64 @@
+---
+title: "Gameservice: Service-Klassen & Orchestrierungs-Logik"
+description: Detaillierte Übersicht aller 8 Service-Klassen des backend-gameservice und deren Dockerode-Logik
+sidebar_position: 3
+---
+
+# Gameservice: Service-Klassen
+
+Der Gameservice verwaltet Container, Netzwerk-Sockets und RCON-Streams über 8 modulare Service-Klassen:
+
+---
+
+## 1. `DockerService`
+Direkter Adapter zum Docker-Daemon (`dockerode`):
+* Verwaltet Container-Lebenszyklen auf dem Host (`/var/run/docker.sock`).
+* Erzwingt Ressourcen-Limits (`CONTAINER_MEMORY_LIMIT`, UID/GID Mapping).
+* Hängt interaktive Streams an stdout/stderr des Containers.
+
+---
+
+## 2. `InstanceService`
+Zentraler Lifecycle-Manager für Spieleserver:
+* Erstellt Verzeichnisstrukturen unter `SERVERS_BASE_DIR` (`/data/servers/<id>`).
+* Generiert `server.properties` und bindet Velocity-Secrets ein.
+* Startet und stoppt Instanzen unter Beachtung des Limits (`MAX_RUNNING_SERVERS = 2`).
+
+---
+
+## 3. `ConsoleService`
+Verwaltet den interaktiven Konsolenzugriff:
+* Baut TCP-Verbindungen über das Minecraft-RCON-Protokoll auf Port `25575` auf.
+* Führt administrative Spielbefehle aus und gibt die Antwort zurück.
+* Leitet Konsolenausgaben über Socket.io an abonnierte Administratoren weiter.
+
+---
+
+## 4. `BackupService`
+Sichert und restauriert Serverwelten:
+* Spawnt kurzlebige `restic/restic:latest` Container im Docker-Netzwerk.
+* Erstellt inkrementelle Snapshots im MinIO-Bucket `kcfallum-gameserver`.
+* Ermöglicht Point-in-Time-Restores bei Weltbeschädigungen.
+
+---
+
+## 5. `SettingsService`
+Verwaltet Konfigurationen (`InstanceSettingsEntity`):
+* Synchronisiert geänderte Gamerules (`keepInventory`, `doDaylightCycle`) in Echtzeit via RCON, ohne den Server neu zu starten.
+
+---
+
+## 6. `ProfileService`
+Verwaltet Templates für verschiedene Spielmodi (z. B. Survival, Event, Creative) und injiziert Plugin-JARs aus dem Template-Verzeichnis.
+
+---
+
+## 7. `BeszelService`
+Telemetry-Adapter für das Beszel-Monitoring:
+* Authentifiziert sich via OIDC beim `backend-auth`.
+* Liest historische CPU-, RAM- und Festplatten-Nutzungsdaten der Container aus.
+
+---
+
+## 8. `ManagementService`
+Überwacht den zentralen Lobby-Server und den Velocity-Proxy, registriert dynamisch gestartete Sub-Server im Proxy und aktualisiert Routing-Tabellen.

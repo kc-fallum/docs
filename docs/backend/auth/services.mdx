@@ -1,0 +1,71 @@
+---
+title: "Auth & Identity Service: Service-Klassen & Business-Logik"
+description: Detaillierte Übersicht aller 9 Service-Klassen des backend-auth und deren Sicherheitslogik
+sidebar_position: 3
+---
+
+# Auth & Identity Service: Service-Klassen
+
+Der Auth Service kapselt sicherheitskritische Operationen in 9 modular aufgebauten Service-Klassen:
+
+---
+
+## 1. `AuthService`
+Zentraler Einstiegspunkt für Benutzeranmeldungen.
+* Verifiziert Benutzername/E-Mail und Passwort mit speicherharten Hashverfahren.
+* Prüft den Aktivierungsstatus des Accounts (`isActive`).
+* Koordiniert die Vergabe von Anmelde-Cookies und Session-Tokens.
+
+---
+
+## 2. `WebAuthnService`
+Implementiert die FIDO2/WebAuthn-Spezifikation nach W3C-Standard via `@simplewebauthn/server`.
+* **Registrierung:** Erzeugt kryptografische Challenges (`generateRegistrationOptions`), empfängt den Public Key des Authenticators und speichert ihn in `WebauthnCredentialEntity`.
+* **Authentifizierung:** Erzeugt `generateAuthenticationOptions`, validiert die vom Client-Authenticator signierte Assertion und stellt sicher, dass der Signatur-Counter inkrementiert wurde (Schutz vor Replay-Attacken).
+
+---
+
+## 3. `OidcService`
+Konfiguriert und betreibt den integrierten OpenID Connect Provider.
+* Verwaltet registrierte Clients (z. B. Beszel-Monitoring).
+* Validiert Client-Credentials und Redirect-URIs.
+* Stellt standardisierte Token-Endpunkte (`/oidc/token`, `/oidc/me`) bereit und signiert Id-Tokens mit OIDC-Claims.
+
+---
+
+## 4. `NutzerService`
+Verwaltet Kontodaten und Berechtigungsstrukturen.
+* Benutzer-CRUD und administrative Kontosperrung.
+* Rollenzuweisung (`admin`, `spieler`, `gast`).
+* Überwachung fehlgeschlagener Anmeldeversuche.
+
+---
+
+## 5. `ApiKeyService`
+Verwaltet programmatische Maschinenschlüssel.
+* Erzeugt Zufallsschlüssel mit dem Format `kc_<prefix>_<secret>`.
+* Speichert ausschließlich den SHA-256-Hash in der Datenbank.
+* Validiert eingehende `Authorization: Bearer kc_...` Header und lädt die hinterlegten Permission-Scopes.
+
+---
+
+## 6. `SessionService`
+Verwaltet Session-States im Redis-Speicher.
+* Speichert Metadaten aktiver Sitzungen (IP-Adresse, User-Agent, Erstellungszeitpunkt).
+* Erlaubt gezieltes Invalidieren ("Von allen Geräten abmelden").
+* Setzt Time-to-Live (TTL) auf 7 Tage.
+
+---
+
+## 7. `TokenService`
+Verantwortlich für die kryptografische Erzeugung und Signatur von JWTs (JSON Web Tokens) für Cross-Service-Aufrufe.
+
+---
+
+## 8. `EmailService`
+Delegiert E-Mail-Versandaufträge (z. B. Bestätigungslinks, Passwort-Reset) asynchron via RabbitMQ an das `backend-email`.
+
+---
+
+## 9. `SpielerService`
+Verknüpft das Benutzerkonto mit dem entsprechenden Vereinsspielerprofil und publiziert Profiländerungen über AMQP (`events.profile.updated`), damit nachgelagerte Services ihre Stammdaten synchron halten.

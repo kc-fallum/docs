@@ -1,0 +1,377 @@
+---
+title: "Backend-Architektur & Service-Blueprint"
+description: Detaillierte Referenz der Backend-Systeme, app.ts vs. db.ts mit Live-Imports, index.routes.ts Schalthebel, Zod-Validierung, RabbitMQ Event-Messaging und Socket.io
+sidebar_position: 1
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import AppTemplateSource from '../../../backend/backend-core/src/app.ts?raw';
+import DbTemplateSource from '../../../backend/backend-core/src/db.ts?raw';
+import IndexRoutesSource from '../../../backend/backend-core/src/routes/index.routes.ts?raw';
+
+# Backend-Architektur & Service-Blueprint
+
+Dieses Dokument beschreibt die Code-Architektur der KC Fallum Plattform. Es vergleicht die unterschiedlichen Backend-Systemtypen, erläutert die Rollen von `app.ts`, `db.ts` und `index.routes.ts` anhand von **Live-Code-Imports**, definiert die Standards für Validierung, Error-Handling, Messaging und WebSockets und bietet einen **vollständigen Step-by-Step Blueprint** zur Erstellung neuer Services.
+
+---
+
+## 1. Die verschiedenen Backend-Systemtypen im Überblick
+
+In der Plattform existieren spezialisierte Backend-Systeme mit unterschiedlichen Aufgaben und Architekturmustern:
+
+```mermaid
+flowchart TD
+    subgraph Gateway ["1. API Gateway (Stateless Proxy)"]
+        GW["backend-gateway<br/>Keine DB | http-proxy-middleware | Rate-Limit | Socket Routing"]
+    end
+
+    subgraph Identity ["2. Identity & Security Backend"]
+        AUTH["backend-auth<br/>auth DB | OIDC Provider | WebAuthn Passkeys | Passport OAuth"]
+    end
+
+    subgraph CoreDomain ["3. Kerndomänen-Backend (Relational & Aggregierend)"]
+        CORE["backend-core<br/>kegelclub DB | Termine | Kasse | Strafen | Google Sheets"]
+    end
+
+    subgraph Storage ["4. Storage & Asset-Verarbeitungs-Backend"]
+        MEDIA["backend-media<br/>media DB | MinIO S3 | Sharp WebP-Kompression | Multer"]
+    end
+
+    subgraph Finance ["5. Buchhaltungs-Backend (Audit & Delegation)"]
+        TRANS["backend-transaction<br/>transaction DB | Salden | Cross-Service Beleg-Upload"]
+    end
+
+    subgraph Infra ["6. Infrastruktur- & Gaming-Orchestrierungs-Backend"]
+        GAME["backend-gameservice<br/>Dockerode Host-Socket | RCON | Restic Backups"]
+    end
+
+    subgraph Worker ["7. Asynchrone Event- & Kommunikations-Worker"]
+        EMAIL["backend-email<br/>RabbitMQ Consumer | React Email | WebPush VAPID"]
+        QUICKMAIL["quickmail<br/>Cloudflare Worker | Resend API Ingest"]
+    end
+
+    GW --> AUTH
+    GW --> CORE
+    GW --> MEDIA
+    GW --> TRANS
+    GW --> GAME
+    TRANS -.->|documentClient.upload()| MEDIA
+    CORE -.->|Events| EMAIL
+    AUTH -.->|Events| EMAIL
+    AUTH -.->|Events| CORE
+```
+
+| Backend-Typ | Dienst | Besonderheit der Architektur |
+|---|---|---|
+| **Stateless Proxy / Gateway** | `backend-gateway` | Besitzt **keine Datenbank**. Verwaltet SSL-Terminierung am Cloudflare-Tunnel, CORS, Helmet, zentrales Rate-Limiting, Cookie-Domain-Rewriting (`.kcfallum.de`) und pfadbasiertes Socket.io-Routing. |
+| **Identity & OIDC Backend** | `backend-auth` | Kombiniert klassischen REST-Service mit einem vollwertigen **OpenID Connect Provider** (`oidc-provider`). Speichert FIDO2-Passkeys (`@simplewebauthn/server`), signiert JWTs und verwaltet Session-Tokens in Redis. |
+| **Kerndomänen-Backend** | `backend-core` | Hochgradig relational. Enthält vernetzte Service-Klassen, die sich gegenseitig referenzieren (z. B. aggregiert `KasseService` Daten aus `Termin`, `SpielerStrafe` und `Beitrag`). Synchronisiert Live-Stände mit Google Sheets. |
+| **Storage- & Asset-Backend** | `backend-media` | Arbeitet mit Binärdaten. Verarbeitet Uploads im Speicher (`multer.memoryStorage()`), komprimiert verlustfrei in WebP via Sharp und streamt Objekte direkt in den MinIO S3 Bucket. |
+| **Finanz- & Delegations-Backend** | `backend-transaction` | Führt das Kassen-Audit. Besitzt keine eigene Dateispeicherung, sondern delegiert Beleg-Uploads synchron per REST (`documentClient`) an `backend-media`. |
+| **Infrastruktur-Backend** | `backend-gameservice` | Kommuniziert über `/var/run/docker.sock` direkt mit dem Docker-Daemon (`dockerode`), steuert Minecraft-Server per RCON-Protokoll und orchestriert Restic-Backups. |
+| **Asynchroner Event-Worker** | `backend-email` | Basiert primär auf **RabbitMQ-Consumern**. Erzeugt dynamische Countdown-GIFs (`gifenc`), rendert TSX-Templates mit React Email und versendet Browser-Push via WebPush. |
+
+---
+
+## 2. Das Standard-Template: `app.ts` vs. `db.ts`
+
+Jeder Service trennt die HTTP-Infrastruktur (`app.ts`) strikt von der Datenbank- und Service-Initialisierung (`db.ts`). Die folgenden Code-Blöcke werden **live aus dem Quellcode importiert**:
+
+### 2.1 Live-Template: `app.ts` (HTTP-Lifecycle & Middleware-Stack)
+Zuständig für:
+* Express-Initialisierung mit Body-Größenlimits (`16kb`).
+* Mounten der Swagger-UI unter `/api-docs`.
+* Healthcheck-Endpunkt (`/health`) mit Service-Name, Uptime und Versions-Tag.
+* Einbinden der Routen (`app.use("/", routes)`).
+* Registrierung des zentralen `errorHandler` ganz am Ende.
+* Starten des Servers über `startHttpServer()`.
+
+<CodeBlock language="typescript" title="backend/backend-core/src/app.ts">
+  {AppTemplateSource}
+</CodeBlock>
+
+---
+
+### 2.2 Live-Template: `db.ts` (TypeORM & Constructor Dependency Injection)
+Zuständig für:
+* Verbindungsaufbau zu PostgreSQL (`initializeDatabase`).
+* Erzeugen generischer DAOs (`TypeOrmGenericDAO`) und Ablage in `app.locals.*DAO`.
+* **Constructor Injection:** Instanziierung aller Service-Klassen mit ihren benötigten DAOs und Sub-Services.
+* Verbindungsaufbau zu RabbitMQ und Registrieren von Event-Subscribern (`initializeMB`).
+
+<CodeBlock language="typescript" title="backend/backend-core/src/db.ts">
+  {DbTemplateSource}
+</CodeBlock>
+
+---
+
+## 3. Die Routen-Architektur: `index.routes.ts` als Kontrollzentrum
+
+Jeder Microservice bündelt seine Endpunkte in einer zentralen Datei `src/routes/index.routes.ts`.
+
+### Die Vorteile dieses Musters:
+1. **Zentrale Authentifizierungs-Schranke:** Statt in 50 einzelnen Routen `authenticate` einzuhängen, steuert `index.routes.ts` globale Zugriffsfilter an einer einzigen Stelle:
+   * Öffentliche Routen (`/katalog`) werden direkt freigegeben.
+   * Geschützte Domänen (`/termin`, `/strafen`, `/kasse`, `/beitrag`) erhalten `authenticate` zentral vorgeschaltet.
+2. **Entlastung der Sub-Routen:** Dateien wie `termin.routes.ts` müssen nicht mehr prüfen, ob ein Token gültig ist, sondern können sich auf die Validierung (`validate.body`) und granulare Rechteprüfungen (`requirePermission`) konzentrieren.
+
+<CodeBlock language="typescript" title="backend/backend-core/src/routes/index.routes.ts">
+  {IndexRoutesSource}
+</CodeBlock>
+
+---
+
+## 4. Deklarative Validierungs-API mit Zod & Swagger
+
+Validierungslogik wird im gesamten Projekt nicht manuell in Handlern programmiert, sondern deklarativ über Zod-Schemas abgebildet.
+
+### Workflow:
+1. **Schema deklarieren:** In `src/models/schemas/zod.<domain>.ts` wird das Eingabeschema definiert (z. B. `createTerminSchema`).
+2. **Middleware einhängen:** In der Route wird `validate.body(schema)`, `validate.query(schema)` oder `validate.params(schema)` eingeklinkt:
+   * Bei gültigen Daten: Schreibt die typisierten Daten zurück in `req.body` und ruft `next()` auf.
+   * Bei Validierungsfehlern: Bricht sofort ab, erzeugt einen `ValidationError` mit genauer Angabe des betroffenen Feldes und übergibt ihn an den `errorHandler` (HTTP 422).
+3. **Swagger-Generierung:** Das Skript `swagger.ts` extrahiert die JSDoc-Deklarationen über den Routen und generiert die Swagger-JSON automatisch.
+
+---
+
+## 5. Zentrales Error-Handling (`error.middleware.ts`)
+
+Express 5 leitet nicht abgefangene Fehler in asynchronen Routen automatisch weiter. Die Middleware `errorHandler` aus `@kc-fallum/backend-lib` mappt alle typisierten Exceptions:
+
+```text
+Service / Route wirft Error
+            │
+            ▼
+┌───────────────────────────────┬──────────────────────────────┬───────────────┐
+│ Error-Klasse                  │ HTTP Statuscode              │ Bedeutung     │
+├───────────────────────────────┼──────────────────────────────┼───────────────┤
+│ InvalidError                  │ 400 Bad Request              │ Ungültig      │
+│ ValidationError               │ 422 Unprocessable Entity     │ Zod-Fehler    │
+│ NotFoundError                 │ 404 Not Found                │ Nicht existent│
+│ ConflictError                 │ 409 Conflict                 │ Duplikat      │
+│ OperationFailedError          │ 500 Internal Server Error    │ Systemfehler  │
+└───────────────────────────────┴──────────────────────────────┴───────────────┘
+```
+
+---
+
+## 6. RabbitMQ (AMQP) Event- & RPC-Kommunikation
+
+Alle Routing-Keys werden zentral in `MESSAGE_BROKER_ROUTES` (`@kc-fallum/shared`) verwaltet:
+
+### 6.1 Event-Driven Architecture (Pub/Sub)
+* **Publisher:** Ein Dienst publiziert ein Event ohne Wissen über die Empfänger:
+  ```typescript
+  await messageBroker.publish(MESSAGE_BROKER_ROUTES.events.profile.created, {
+    id: user.spieler.id,
+    vorname: user.username,
+    email: user.email
+  });
+  ```
+* **Subscriber:** Empfangende Dienste (z. B. `backend-core`) abonnieren das Event in `db.ts` und führen Folgeaktionen aus (z. B. Anlegen des Spielereintrags).
+
+### 6.2 RPC (Remote Procedure Call)
+Ermöglicht synchrone Request-Response-Aufrufe über RabbitMQ mittels temporärer Reply-Queues und `correlationId` (z. B. `media.getUrl`).
+
+---
+
+## 7. Socket.io Echtzeit-Architektur
+
+1. **Gateway Upgrade-Routing:** Das Gateway analysiert Pfade und Query-Parameter (`/socket.io`) und leitet Verbindungen weiter:
+   * `requestId` oder `/ws/auth` &rarr; `backend-auth`
+   * `targetId` oder `gameserver` &rarr; `backend-gameservice`
+   * Alle übrigen Upgrades &rarr; `backend-core`
+2. **Subscription-Modell:** Frontends abonnieren über `socket.emit("subscribe", { type: SubscriptionType.DOMAIN, targetId })` gezielt Events (z. B. `STRAFE_CREATED`, `TERMIN_CLOSED`, `GAMESERVER_CONSOLE`).
+
+---
+
+## 8. Step-by-Step Blueprint: Einen neuen Microservice von Grund auf erstellen
+
+Folgende 8 Schritte bilden das kanonische Vorgehen, um einen neuen Microservice im KC-Fallum Ökosystem zu implementieren:
+
+### Schritt 1: `package.json` und Workspace-Einbindung
+Der neue Service wird unter `backend/backend-<name>` angelegt. Er nutzt ESM (`"type": "module"`), Express 5 und referenziert die Shared-Pakete als Registry-Versionen:
+
+```json
+{
+  "name": "@kc-fallum/backend-sample",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "dev": "tsx watch src/app.ts",
+    "swagger": "tsx src/swagger.ts"
+  },
+  "dependencies": {
+    "@kc-fallum/backend-lib": "^1.0.0",
+    "@kc-fallum/shared": "^1.0.0",
+    "express": "^5.0.0",
+    "pg": "^8.13.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20",
+    "zod": "^3.23.0"
+  }
+}
+```
+
+### Schritt 2: Konfiguration & Umgebungsvariablen (`src/config/env.config.ts`)
+Umgebungsvariablen werden niemals direkt über `process.env` ausgelesen, sondern über `getEnv(key, required)` aus `@kc-fallum/backend-lib`:
+
+```typescript
+import { getEnv } from "@kc-fallum/backend-lib";
+
+/**
+ * Konfigurationsobjekt für den Sample-Service.
+ */
+export const SAMPLE_CONFIG = {
+  dbHost: getEnv("DB_HOST", true),
+  dbPort: Number(getEnv("DB_PORT", false) || 5432),
+  dbName: getEnv("DB_DATABASE", true),
+  sampleLimit: Number(getEnv("SAMPLE_LIMIT", false) || 50)
+};
+```
+
+### Schritt 3: Entity-Klasse (`src/models/entities/sample.entity.ts`)
+Entitäten erben von `BaseEntity` (welches `id`, `createdAt`, `updatedAt` bereitstellt):
+
+```typescript
+import { Column, Entity, ManyToOne, RelationId } from "typeorm";
+import { BaseEntity } from "@kc-fallum/backend-lib";
+
+/**
+ * Repräsentiert ein Beispieldokument im Sample-Microservice.
+ */
+@Entity("sample")
+export class SampleEntity extends BaseEntity {
+  @Column({ type: "varchar", length: 120 })
+  titel!: string;
+
+  @Column({ type: "text", nullable: true })
+  beschreibung?: string;
+
+  @Column({ type: "uuid" })
+  erstellerId!: string;
+}
+```
+
+### Schritt 4: Data Access Layer (DAO)
+Statt eigene SQL-Queries zu schreiben, wird der generische `TypeOrmGenericDAO` aus `@kc-fallum/backend-lib` verwendet:
+
+```typescript
+import { TypeOrmGenericDAO } from "@kc-fallum/backend-lib";
+import { SampleEntity } from "../models/entities/sample.entity.js";
+
+export type SampleDAO = TypeOrmGenericDAO<SampleEntity>;
+```
+
+### Schritt 5: Service-Klasse mit Constructor Injection (`src/services/sample.service.ts`)
+Die Business-Logik residiert im Service. Alle Abhängigkeiten (DAOs, RabbitMQ-Clients) werden über den Konstruktor injiziert:
+
+```typescript
+import { NotFoundError, ValidationFailedError } from "@kc-fallum/backend-lib";
+import { SampleDAO } from "../dao/sample.dao.js";
+import { SampleEntity } from "../models/entities/sample.entity.js";
+import type { CreateSampleDTO } from "@kc-fallum/shared";
+
+/**
+ * Führt Geschäftsoperationen für Beispieldaten aus.
+ */
+export class SampleService {
+  public constructor(private readonly sampleDao: SampleDAO) {}
+
+  /**
+   * Erstellt einen neuen Datensatz nach Validierung.
+   */
+  public async create(dto: CreateSampleDTO, erstellerId: string): Promise<SampleEntity> {
+    const entity = new SampleEntity();
+    entity.titel = dto.titel;
+    entity.beschreibung = dto.beschreibung;
+    entity.erstellerId = erstellerId;
+
+    return await this.sampleDao.create(entity);
+  }
+
+  /**
+   * Lädt einen Datensatz anhand seiner eindeutigen ID.
+   */
+  public async getById(id: string): Promise<SampleEntity> {
+    const item = await this.sampleDao.findOne({ where: { id } });
+    if (!item) {
+      throw new NotFoundError(`Sample mit ID ${id} existiert nicht.`);
+    }
+    return item;
+  }
+}
+```
+
+### Schritt 6: Zod-Validierung & Controller-Routen (`src/routes/sample.routes.ts`)
+Validierung erfolgt deklarativ mit `validate.body(...)`, Rechteprüfung mit `requirePermission(...)`:
+
+```typescript
+import { Router } from "express";
+import { requirePermission, validate } from "@kc-fallum/backend-lib";
+import { z } from "zod";
+import type { SampleService } from "../services/sample.service.js";
+
+const createSampleSchema = z.object({
+  titel: z.string().min(3).max(120),
+  beschreibung: z.string().optional()
+});
+
+export const createSampleRouter = (service: SampleService): Router => {
+  const router = Router();
+
+  /**
+   * @swagger
+   * /sample:
+   *   post:
+   *     summary: Erstellt einen neuen Sample-Datensatz
+   *     tags: [Sample]
+   */
+  router.post(
+    "/",
+    requirePermission("sample", "create"),
+    validate.body(createSampleSchema),
+    async (req, res) => {
+      const result = await service.create(req.body, req.user!.id);
+      res.status(201).json(result);
+    }
+  );
+
+  return router;
+};
+```
+
+### Schritt 7: Gatekeeper & Routen-Bündelung (`src/routes/index.routes.ts`)
+Alle Sub-Routen werden in `index.routes.ts` gesammelt, wo globale Auth-Guards platziert werden:
+
+```typescript
+import { Router } from "express";
+import { authenticate } from "@kc-fallum/backend-lib";
+import { createSampleRouter } from "./sample.routes.js";
+import type { Express } from "express";
+
+export const createRoutes = (app: Express): Router => {
+  const router = Router();
+  const sampleService = app.locals.sampleService;
+
+  // Geschützter Bereich
+  router.use("/sample", authenticate, createSampleRouter(sampleService));
+
+  return router;
+};
+```
+
+### Schritt 8: Lifecycle-Wiring in `db.ts` und `app.ts`
+1. **`db.ts`:** Stellt DB-Verbindung her, initialisiert DAOs und instanziiert Services:
+   ```typescript
+   export async function initializeDatabase(app: Express) {
+     const ds = await createDataSource([SampleEntity]);
+     await ds.initialize();
+     const dao = new TypeOrmGenericDAO(ds.getRepository(SampleEntity));
+     app.locals.sampleService = new SampleService(dao);
+   }
+   ```
+2. **`app.ts`:** Bindet Middleware, Swagger, Routes und ganz am Ende `errorHandler` ein.

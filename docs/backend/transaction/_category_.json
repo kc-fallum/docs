@@ -1,0 +1,8 @@
+{
+  "label": "Transaction Service",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "Revisionssicheres Kassenbuch, Buchungssätze und Cross-Service Beleg-Upload"
+  }
+}

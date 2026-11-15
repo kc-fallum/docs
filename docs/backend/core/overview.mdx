@@ -1,0 +1,96 @@
+---
+title: "Core Service: Übersicht & Architektur"
+description: Architektur, Aufgaben und Routing des backend-core Microservice
+sidebar_position: 1
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import IndexRoutesSource from '../../../../backend/backend-core/src/routes/index.routes.ts?raw';
+
+# Core Service (`backend-core`)
+
+Der **Core Service** bildet das Herzstück der KC Fallum Plattform. Er verwaltet die Kerndomänen des Vereins und speichert alle operativen Daten in der PostgreSQL-Datenbank `kegelclub`.
+
+---
+
+## 1. Aufgaben & Verantwortlichkeiten
+
+* **Terminverwaltung (`/termin`):** Erstellen, Planen, Vorziehen, Absagen und Abschließen von Kegelabenden.
+* **Absage-Management (`/absage`):** Verwaltung von Spielerabmeldungen mit Zeitstempeln (vor/nach Meldefrist).
+* **Strafen & Strafenkatalog (`/strafen`, `/katalog`):** Vollständige Erfassung aller im Verein verhängten Strafen, Klassifizierung nach Kategorien (z. B. Spiel, Kegel, Vergehen) und konfigurierbare Festbeträge.
+* **Kasse & Salden (`/kasse`):** Aggregation von offenen Strafen, Einzahlungen und Ausgaben zu einem konsolidierten Kassenstand.
+* **Beitragsverwaltung (`/beitrag`):** Monatliche Beitragserhebung für aktive Mitglieder.
+* **Google Sheets Synchronisation:** Bidirektionale Synchronisation mit Google Spreadsheets zur externen Ansicht und Archivierung via Google Service Account.
+* **Echtzeit-Broadcasting:** Benachrichtigt verbundene Frontends via Socket.io über Events wie `STRAFE_CREATED`, `STRAFE_DELETED` oder `TERMIN_CLOSED`.
+
+---
+
+## 2. Datenbank-Schema (`kegelclub`)
+
+Der Dienst verwendet 6 relationale Entitäten:
+
+```mermaid
+erDiagram
+    TERMIN ||--o{ ABSAGE : "hat Absagen"
+    TERMIN ||--o{ SPIELER_STRAFE : "verhängt Strafen an"
+    STRAFENKATALOG ||--o{ SPIELER_STRAFE : "definiert Typ & Betrag"
+    SPIELER ||--o{ SPIELER_STRAFE : "erhält Strafe"
+    SPIELER ||--o{ ABSAGE : "meldet sich ab"
+    SPIELER ||--o{ BEITRAG : "zahlt Beitrag"
+    KASSE ||--o{ SPIELER : "bezieht sich auf"
+
+    TERMIN {
+        uuid id PK
+        timestamp datum
+        varchar ort
+        boolean abgeschlossen
+    }
+
+    ABSAGE {
+        uuid id PK
+        uuid terminId FK
+        uuid spielerId FK
+        timestamp zeitpunkt
+        varchar grund
+    }
+
+    STRAFENKATALOG {
+        uuid id PK
+        varchar name
+        decimal betrag
+        varchar typ
+    }
+
+    SPIELER_STRAFE {
+        uuid id PK
+        uuid terminId FK
+        uuid strafenKatalogId FK
+        uuid spielerId FK
+        integer anzahl
+        decimal betrag
+    }
+
+    BEITRAG {
+        uuid id PK
+        uuid spielerId FK
+        integer monat
+        integer jahr
+        boolean bezahlt
+    }
+
+    KASSE {
+        uuid id PK
+        decimal stand
+        timestamp standDatum
+    }
+```
+
+---
+
+## 3. Routen-Übersicht & Index-Schalthebel
+
+Alle Endpunkte des Core-Service werden über `src/routes/index.routes.ts` gesteuert. Öffentliche Routen (wie `/katalog`) werden direkt exponiert, während alle verwaltenden Routen durch die `authenticate`-Middleware geschützt sind:
+
+<CodeBlock language="typescript" title="backend/backend-core/src/routes/index.routes.ts">
+  {IndexRoutesSource}
+</CodeBlock>

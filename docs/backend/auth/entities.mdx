@@ -1,0 +1,61 @@
+---
+title: "Auth & Identity Service: Entitäten & Datenmodell"
+description: Live-Imports und Dokumentation aller 4 TypeORM-Entitäten der auth-Datenbank
+sidebar_position: 2
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import NutzerSource from '../../../../backend/backend-auth/src/models/entities/nutzer.entity.ts?raw';
+import CredentialSource from '../../../../backend/backend-auth/src/models/entities/webauthn-credential.entity.ts?raw';
+import ApiKeySource from '../../../../backend/backend-auth/src/models/entities/apikey.entity.ts?raw';
+import SpielerSource from '../../../../backend/backend-auth/src/models/entities/spieler.entity.ts?raw';
+
+# Auth Entitäten (`auth` DB)
+
+Alle Entitäten des Auth Service verwalten sicherheitsrelevante Identitätsdaten und Zugangsdaten in der separaten PostgreSQL-Datenbank `auth`.
+
+---
+
+## 1. `NutzerEntity`
+Zentraler Benutzer-Account. Enthält Anmeldedaten, Rollen und Verknüpfungen zu Authentifizierungsmethoden.
+
+* **Felder:** `username`, `email`, `passwordHash` (Argon2 / bcrypt), `isActive`, `roles`, `lastLogin`.
+* **Beziehungen:** 1:n zu `WebauthnCredentialEntity`, 1:n zu `ApiKeyEntity`, 1:1 zu `SpielerEntity`.
+
+<CodeBlock language="typescript" title="backend/backend-auth/src/models/entities/nutzer.entity.ts">
+  {NutzerSource}
+</CodeBlock>
+
+---
+
+## 2. `WebauthnCredentialEntity`
+Speichert FIDO2/WebAuthn Passkey Credentials für biometrische und Hardware-Sicherheitsschlüssel.
+
+* **Felder:** `credentialId`, `publicKey`, `counter` (Replay-Angriffsschutz), `transports`, `deviceType`, `backedUp`.
+* **Fremdschlüssel:** `nutzerId`.
+
+<CodeBlock language="typescript" title="backend/backend-auth/src/models/entities/webauthn-credential.entity.ts">
+  {CredentialSource}
+</CodeBlock>
+
+---
+
+## 3. `ApiKeyEntity`
+Ermöglicht programmatischen Zugriff für externe Anwendungen und Automatisierungsskripte.
+
+* **Felder:** `name`, `keyHash` (SHA-256 des geheimen Tokens), `prefix` (öffentlich sichtbarer Schlüssel-Präfix), `permissions` (JSONB Permission-Matrix), `expiresAt`.
+
+<CodeBlock language="typescript" title="backend/backend-auth/src/models/entities/apikey.entity.ts">
+  {ApiKeySource}
+</CodeBlock>
+
+---
+
+## 4. `SpielerEntity`
+Repräsentiert das Vereinsmitgliedsprofil, das mit dem Benutzerkonto verknüpft ist.
+
+* **Felder:** `vorname`, `nachname`, `status` (`AKTIV`, `INAKTIV`, `EHRENMITGLIED`), `geburtsdatum`.
+
+<CodeBlock language="typescript" title="backend/backend-auth/src/models/entities/spieler.entity.ts">
+  {SpielerSource}
+</CodeBlock>

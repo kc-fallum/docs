@@ -1,0 +1,8 @@
+{
+  "label": "Minecraft Ökosystem",
+  "position": 9,
+  "link": {
+    "type": "generated-index",
+    "description": "Minecraft Server, Velocity Proxy und Plugin-Architektur"
+  }
+}

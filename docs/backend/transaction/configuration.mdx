@@ -1,0 +1,47 @@
+---
+title: "Transaction Service: Konfigurations-Referenz"
+description: Detaillierte Aufschlüsselung aller Config-Dateien und Umgebungsvariablen von backend-transaction
+sidebar_position: 4
+---
+
+# Transaction Service: Konfigurations-Referenz
+
+Dieses Dokument bietet eine vollständige Referenz aller Konfigurationsdateien und Umgebungsvariablen des `backend-transaction`.
+
+---
+
+## 1. Konfigurationsdateien im Detail
+
+### 1.1 `config/transaction.config.ts`
+Definiert die Zellbereiche für den Import historischer Buchungsdaten aus Google Spreadsheets:
+
+```typescript
+export const transactionConfig = {
+  sheet: "tabellenblatt11",
+  einnahmenPP: "tabellenblatt11!A:D",
+  ausgabenPP: "tabellenblatt11!F:I",
+  belegPP: "tabellenblatt11!Y:AB",
+  einnahmenN26: "tabellenblatt11!K:N",
+  ausgabenN26: "tabellenblatt11!P:S"
+};
+```
+
+* **`einnahmenPP` / `ausgabenPP`:** Zellbereiche für PayPal-Geldeingänge und -Ausgänge.
+* **`einnahmenN26` / `ausgabenN26`:** Zellbereiche für das Vereinskonto bei N26.
+* **`belegPP`:** Verknüpfte Drive-Belegnummern.
+
+---
+
+## 2. Umgebungsvariablen (`.env`)
+
+| Variable | Erforderlich | Standard | Beschreibung |
+|---|---|---|---|
+| `PORT` | Nein | `3003` | HTTP-Port für Transaction-Service |
+| `DB_HOST` | Ja | – | Hostname der PostgreSQL-Instanz |
+| `DB_PORT` | Nein | `5432` | PostgreSQL-Port |
+| `DB_DATABASE` | Ja | `transaction` | Name der relationalen Datenbank |
+| `DB_USERNAME` | Ja | – | PostgreSQL-Benutzer |
+| `DB_PASSWORD` | Ja | – | PostgreSQL-Passwort |
+| `MEDIA_SERVICE_URL` | Ja | `http://media-service:3002` | Interne REST-URL des Media-Service für Belegdelegation |
+| `JWT_SECRET` | Ja | – | Shared Secret zur Validierung von Token-Signaturen |
+| `GOOGLE_SHEET_ID` | Nein | – | Google Spreadsheet ID für Altdaten-Sync |

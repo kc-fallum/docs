@@ -1,0 +1,54 @@
+---
+title: "API Gateway: Konfigurations-Referenz"
+description: Detaillierte Aufschlüsselung aller Config-Dateien, CORS-Regeln und Umgebungsvariablen von backend-gateway
+sidebar_position: 2
+---
+
+# API Gateway: Konfigurations-Referenz
+
+Dieses Dokument bietet eine vollständige Referenz aller Konfigurationsdateien, Sicherheitsregeln und Umgebungsvariablen des `backend-gateway`.
+
+---
+
+## 1. Konfigurationsdateien im Detail
+
+### 1.1 `config/cors.config.ts`
+Regelt den herkunftsübergreifenden Ressourcenzugriff (CORS):
+* **Erlaubte Origins:**
+  * Produktion: `https://kcfallum.de` sowie alle Subdomains (`https://*.kcfallum.de`).
+  * Entwicklung: `http://localhost:*` und `http://127.0.0.1:*`.
+* **Credentials:** `credentials: true` ist zwingend aktiviert, damit Browser Cookies über Subdomains hinweg an das Gateway mitsenden.
+* **Erlaubte Methoden:** `GET, POST, PUT, DELETE, PATCH, OPTIONS`.
+
+---
+
+### 1.2 `config/csp.config.ts`
+Stellt restriktive Sicherheitsrichtlinien für HTTP-Header bereit:
+* Konfiguriert Helmet zur Unterdrückung von MIME-Sniffing (`X-Content-Type-Options: nosniff`), Clickjacking-Schutz (`X-Frame-Options: SAMEORIGIN`) und HSTS (`Strict-Transport-Security`).
+
+---
+
+### 1.3 WebSocket-Upgrade-Routing
+WebSocket-Verbindungen (`Upgrade: websocket`) werden im HTTP-Server analysiert:
+1. Verbindungen mit `path` oder Query-Parameter `auth` &rarr; Proxy zu `AUTH_SERVICE_URL`.
+2. Verbindungen mit `path` oder Query-Parameter `gameserver` &rarr; Proxy zu `GAMESERVER_SERVICE_URL`.
+3. Alle übrigen Upgrades &rarr; Proxy zu `CORE_SERVICE_URL`.
+
+---
+
+## 2. Umgebungsvariablen (`.env`)
+
+| Variable | Erforderlich | Standard | Beschreibung |
+|---|---|---|---|
+| `PORT` | Nein | `3000` | HTTP-Port, an dem das Gateway lauscht |
+| `NODE_ENV` | Nein | `development` | Laufzeitumgebung |
+| `COOKIE_DOMAIN` | Nein | `.kcfallum.de` | Domain für Cookie-Rewriting |
+| `AUTH_SERVICE_URL` | Ja | `http://auth-service:3001` | Interne Docker-URL für Authentifizierung |
+| `CORE_SERVICE_URL` | Ja | `http://core-service:3000` | Interne Docker-URL für Kerndomäne |
+| `MEDIA_SERVICE_URL`| Ja | `http://media-service:3002` | Interne Docker-URL für Medien |
+| `TRANSACTION_SERVICE_URL` | Ja | `http://transaction-service:3003` | Interne Docker-URL für Transaktionen |
+| `GAMESERVER_SERVICE_URL` | Ja | `http://gameserver-service:3004` | Interne Docker-URL für Gaming |
+| `SETTINGS_SERVICE_URL` | Ja | `http://settings-service:3005` | Interne Docker-URL für Einstellungen |
+| `EMAIL_SERVICE_URL`| Ja | `http://email-service:3006` | Interne Docker-URL für E-Mail/Push |
+| `RATE_LIMIT_WINDOW_MS` | Nein | `900000` | Zeitfenster für Rate-Limiting (15 Min.) |
+| `RATE_LIMIT_MAX` | Nein | `1000` | Maximale Anfragen pro IP im Zeitfenster |

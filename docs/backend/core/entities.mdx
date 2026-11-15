@@ -1,0 +1,87 @@
+---
+title: "Core Service: Entitäten & Datenmodell"
+description: Live-Imports und Dokumentation aller TypeORM-Entitäten der kegelclub-Datenbank
+sidebar_position: 2
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import TerminSource from '../../../../backend/backend-core/src/models/entities/termin.entity.ts?raw';
+import StrafeSource from '../../../../backend/backend-core/src/models/entities/spielerstrafe.entity.ts?raw';
+import KatalogSource from '../../../../backend/backend-core/src/models/entities/strafenkatalog.entity.ts?raw';
+import AttendanceSource from '../../../../backend/backend-core/src/models/entities/attendance.entity.ts?raw';
+import SpielerSource from '../../../../backend/backend-core/src/models/entities/spieler.entity.ts?raw';
+import BeitragSource from '../../../../backend/backend-core/src/models/entities/beitrag.entity.ts?raw';
+
+# Core Entitäten (`kegelclub` DB)
+
+Alle Entitäten des Core Service erben von `BaseEntity` (bereitgestellt von `@kc-fallum/backend-lib`) und sind mit TypeORM-Dekoratoren annotiert. Die folgenden Code-Blöcke binden die Originaldateien via **Live-Code-Import** ein.
+
+---
+
+## 1. `TerminEntity`
+Repräsentiert einen geplanten oder durchgeführten Kegelabend. Termine bilden den zeitlichen Bezugspunkt für Anwesenheiten, Absagen und verhängte Strafen.
+
+* **Felder:** `datum`, `ort`, `beginn`, `ende`, `abgeschlossen`, `abgesagt`.
+* **Beziehungen:** 1:n zu `AttendanceEntity`, 1:n zu `SpielerStrafeEntity`.
+
+<CodeBlock language="typescript" title="backend/backend-core/src/models/entities/termin.entity.ts">
+  {TerminSource}
+</CodeBlock>
+
+---
+
+## 2. `SpielerStrafeEntity`
+Verbindet einen Spieler mit einem Termin und einer verhängten Strafe aus dem Katalog.
+
+* **Felder:** `anzahl`, `betrag`, `bezahlt`, `notiz`.
+* **Fremdschlüssel:** `terminId`, `spielerId`, `strafenKatalogId`.
+
+<CodeBlock language="typescript" title="backend/backend-core/src/models/entities/spielerstrafe.entity.ts">
+  {StrafeSource}
+</CodeBlock>
+
+---
+
+## 3. `StrafenKatalogEntity`
+Der Katalog definiert alle offiziellen Vergehen und Spiele des Vereins inklusive Standard-Betrag und Kategorie.
+
+* **Felder:** `name`, `betrag`, `typ` (z. B. `KEGEL`, `SPIEL`, `VERGEHEN`), `beschreibung`.
+
+<CodeBlock language="typescript" title="backend/backend-core/src/models/entities/strafenkatalog.entity.ts">
+  {KatalogSource}
+</CodeBlock>
+
+---
+
+## 4. `AttendanceEntity`
+Dokumentiert die Anwesenheit bzw. Abmeldung eines Mitglieds für einen konkreten Kegeltermin.
+
+* **Felder:** `zeitpunkt`, `grund`, `fristGerecht` (automatisch berechnet anhand des Meldeschlusses).
+* **Fremdschlüssel:** `terminId`, `spielerId`.
+
+<CodeBlock language="typescript" title="backend/backend-core/src/models/entities/attendance.entity.ts">
+  {AttendanceSource}
+</CodeBlock>
+
+---
+
+## 5. `SpielerEntity`
+Lokale Entität für Spieler-Stammdaten im Core-Service.
+
+* **Felder:** `vorname`, `nachname`, `status`, `istGast`.
+
+<CodeBlock language="typescript" title="backend/backend-core/src/models/entities/spieler.entity.ts">
+  {SpielerSource}
+</CodeBlock>
+
+---
+
+## 6. `BeitragEntity`
+Verwaltet die monatlichen Mitgliedsbeiträge der Vereinsspieler.
+
+* **Felder:** `monat`, `jahr`, `betrag`, `status` (`OFFEN`, `BEZAHLT`, `BEFREIT`).
+* **Fremdschlüssel:** `spielerId`.
+
+<CodeBlock language="typescript" title="backend/backend-core/src/models/entities/beitrag.entity.ts">
+  {BeitragSource}
+</CodeBlock>

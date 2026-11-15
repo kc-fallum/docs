@@ -6,14 +6,14 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'KCFallum Docs',
-  tagline: 'Zentrale Dokumentation',
+  title: 'KC Fallum Dokumentation',
+  tagline: 'Dokumentation KC Fallum Umgebungen',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
-  future: {
-    v4: true, // Improve compatibility with the upcoming Docusaurus v4
-  },
+  // future: {
+  //   v4: true,
+  // },
 
   // Set the production url of your site here
   url: 'https://kc-fallum.github.io',
@@ -26,14 +26,14 @@ const config: Config = {
   organizationName: 'kc-fallum', // Usually your GitHub org/user name.
   projectName: 'docs', // Usually your repo name.
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: 'de',
+    locales: ['de'],
   },
 
   presets: [
@@ -43,26 +43,9 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+          editUrl: 'https://github.com/kc-fallum/docs/tree/main/',
         },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-          // Useful options to enforce blogging best practices
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -70,7 +53,27 @@ const config: Config = {
     ],
   ],
 
-  plugins: [],
+  plugins: [
+    function rawLoaderPlugin() {
+      return {
+        name: 'raw-loader-plugin',
+        configureWebpack(config) {
+          config.module = config.module || { rules: [] };
+          config.module.rules = config.module.rules || [];
+          config.module.rules.forEach((rule: any) => {
+            if (rule.test && /\[jt\]sx\?/i.test(rule.test.toString())) {
+              rule.resourceQuery = { not: [/raw/] };
+            }
+          });
+          config.module.rules.unshift({
+            resourceQuery: /raw/,
+            type: 'asset/source',
+          });
+          return {};
+        },
+      };
+    },
+  ],
 
   themeConfig: {
     // Replace with your project's social card
@@ -79,27 +82,36 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'My Site',
+      title: 'KC Fallum Docs',
       logo: {
-        alt: 'My Site Logo',
+        alt: 'KC Fallum Logo',
         src: 'img/logo.svg',
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
+          to: '/architecture',
+          label: 'Systemarchitektur',
           position: 'left',
-          label: 'Documentation & API',
+        },
+        {
+          to: '/standards',
+          label: 'Standards & Blueprints',
+          position: 'left',
+        },
+        {
+          to: '/dependencies',
+          label: 'Infrastruktur',
+          position: 'left',
         },
         {
           href: 'pathname:///docs/javadoc/kcfallum-api/index.html',
-          label: 'KCFallum API (JavaDoc)',
+          label: 'JavaDoc API ↗',
           position: 'left',
           target: '_blank',
         },
         {
           href: 'https://github.com/kc-fallum',
-          label: 'GitHub',
+          label: 'GitHub ↗',
           position: 'right',
         },
       ],
@@ -108,46 +120,66 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'System & Architektur',
           items: [
             {
-              label: 'Tutorial',
-              to: '/intro',
+              label: 'Systemarchitektur',
+              to: '/architecture',
+            },
+            {
+              label: 'Infrastruktur & Externe Abhängigkeiten',
+              to: '/dependencies',
+            },
+            {
+              label: 'Setup & Deployment',
+              to: '/setup',
+            },
+            {
+              label: 'Architektur- & Design-Standards',
+              to: '/standards',
+            },
+            {
+              label: 'API Gateway & Routing',
+              to: '/backend/gateway/overview',
             },
           ],
         },
         {
-          title: 'Community',
+          title: 'Submodule',
           items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
+              label: 'Shared Packages',
+              to: '/packages/shared',
             },
             {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
+              label: 'Frontends',
+              to: '/frontends/frontend-guide',
             },
             {
-              label: 'X',
-              href: 'https://x.com/docusaurus',
+              label: 'Backend Services',
+              to: '/backend/backend-guide',
+            },
+            {
+              label: 'Minecraft Plugins',
+              to: '/minecraft/plugins',
             },
           ],
         },
         {
-          title: 'More',
+          title: 'Links',
           items: [
             {
-              label: 'Blog',
-              to: '/blog',
-            },
-            {
-              label: 'GitHub',
+              label: 'GitHub Organization',
               href: 'https://github.com/kc-fallum',
+            },
+            {
+              label: 'Status Monitor',
+              href: 'https://status.kcfallum.de',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} KC Fallum. Dokumentation erstellt mit Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

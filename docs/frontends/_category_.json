@@ -1,0 +1,8 @@
+{
+  "label": "Frontends & UI-Architektur",
+  "position": 7,
+  "link": {
+    "type": "generated-index",
+    "description": "Benutzeroberflächen, Lit 3 Web-Components, 4-Schichten-Architektur und Single Page Applications"
+  }
+}

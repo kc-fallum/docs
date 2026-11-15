@@ -1,0 +1,54 @@
+---
+title: "SSO Portal: Architektur & Authentifizierung"
+description: Zentrales SSO-Portal (auth.kcfallum.de) mit FIDO2 Passkeys, WebAuthn und OAuth2
+sidebar_position: 1
+---
+
+# Single Sign-On Portal (`frontend-sso`)
+
+Das Submodul `frontend/frontend-sso` stellt die zentrale Anmelde- und Autorisierungs-SPA unter `https://auth.kcfallum.de` (Port 8081) bereit.
+
+---
+
+## 1. Zweck & Authentifizierungsmethoden
+
+* **Biometrische Passkeys (WebAuthn / FIDO2):** Passwortloser Ein-Klick-Login via TouchID, FaceID, Windows Hello oder YubiKey.
+* **Google Single Sign-On:** Nahtlose Anmeldung mit Google Workspace Konten über die Google Identity Services API (`accounts.google.com/gsi/client`).
+* **Klassischer Login:** E-Mail/Passwort mit Ratenbegrenzung.
+* **Passwort-Reset & Magic Links:** E-Mail-basierte Einmal-Anmeldelinks.
+* **OIDC Consent-Screen:** Berechtigungs-Freigabedialog für Drittanwendungen (wie Beszel Monitoring).
+
+---
+
+## 2. Der Passkey-Login Flow im Frontend
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Benutzer
+    participant SSO as frontend-sso
+    participant Client as webauthnClient
+    participant Auth as backend-auth
+    participant Browser as WebAuthn API (Navigator)
+
+    User->>SSO: Klick auf "Mit Passkey anmelden"
+    SSO->>Client: webauthnClient.generateAuthenticationOptions(email)
+    Client->>Auth: POST /auth/webauthn/generate-options
+    Auth-->>Client: PublicKeyCredentialRequestOptions
+    Client->>Browser: navigator.credentials.get({ publicKey: options })
+    Browser->>User: Biometrie / PIN anfordern
+    User-->>Browser: Fingerabdruck / Scan bestätigt
+    Browser-->>Client: Assertion (Signatur, ClientDataJSON)
+    Client->>Auth: POST /auth/webauthn/verify (Assertion)
+    Auth-->>Client: 200 OK (Set-Cookie: session_id; Domain=.kcfallum.de)
+    Client-->>SSO: Erfolg
+    SSO->>User: Weiterleitung zur redirect_uri
+```
+
+---
+
+## 3. Redirect-Handling & Cookie-Scope
+
+* **`redirect_uri` Parameter:** Das SSO-Portal liest beim Laden den URL-Parameter `?redirect_uri=...` aus.
+* **Sicherheits-Prüfung:** Erlaubt sind ausschließlich Weiterleitungsziele innerhalb der Domain `*.kcfallum.de` oder `localhost` im Entwicklungsmodus.
+* **Session-Cookie:** Nach erfolgreicher Verifikation setzt `backend-auth` ein HTTP-Only Cookie mit `Domain=.kcfallum.de`. Sobald der Browser zur Ziel-Applikation (`kcfallum.de` oder `dashboard.kcfallum.de`) zurückkehrt, ist der Benutzer dort sofort eingeloggt.

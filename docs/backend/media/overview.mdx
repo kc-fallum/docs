@@ -1,0 +1,54 @@
+---
+title: "Media Service: Übersicht & Architektur"
+description: Architektur, Speicher-Pipeline und S3/MinIO-Streaming des backend-media Microservice
+sidebar_position: 1
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import IndexRoutesSource from '../../../../backend/backend-media/src/routes/index.routes.ts?raw';
+
+# Media Service (`backend-media`)
+
+Der **Media Service** ist der zentrale Dateispeicher- und Asset-Verarbeitungsdienst der KC Fallum Plattform. Er abstrahiert den darunterliegenden MinIO S3-Objektspeicher, verarbeitet Medienströme hochperformant im Arbeitsspeicher und liefert Dateien über signierte URLs aus.
+
+---
+
+## 1. Aufgaben & Verarbeitungs-Pipeline
+
+* **In-Memory Streaming:** Uploads werden via `multer.memoryStorage()` direkt im RAM gepuffert, um unnötige Festplatten-I/O auf dem Host zu vermeiden.
+* **Sharp Bildoptimierung:** Konvertiert Bilddateien automatisiert in moderne, komprimierte WebP-Assets, entfernt Datenschutz-kritische Exif-Metadaten und skaliert Vorschaubilder (Thumbnails).
+* **S3/MinIO Objektspeicher:** Speichert alle Binärdaten im dedizierten Bucket `kcfallum-media`.
+* **Presigned URLs (`generatePresignedUrl`):** Schützt private Dateien vor unberechtigtem Direktzugriff. Clients erhalten zeitlich begrenzte Download-URLs (Standard: 3600 Sekunden Gültigkeit).
+* **Zugriffssteuerung (`AccessEntity`):** Ermöglicht die Freigabe von Alben und Dokumenten für bestimmte Benutzer oder Rollen.
+
+---
+
+## 2. Die Media-Upload-Pipeline
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Frontend / Service
+    participant Media as backend-media
+    participant Sharp as Sharp Processor
+    participant S3 as MinIO (S3 Bucket)
+    participant DB as media DB (Postgres)
+
+    Client->>Media: POST /picture/upload (Multipart Form)
+    Media->>Media: Multer puffert im RAM (Buffer)
+    Media->>Sharp: Komprimiere zu WebP (85% Quality) & berechne Hash
+    Sharp-->>Media: Optimierter Buffer & Metadaten
+    Media->>S3: PutObjectCommand(kcfallum-media, key)
+    Media->>DB: Speichere MetadataEntity & PictureEntity
+    Media-->>Client: 201 Created (ID, Name, Key)
+```
+
+---
+
+## 3. Routen-Übersicht & Index-Schalthebel
+
+Die Datei `src/routes/index.routes.ts` bündelt alle Media-Endpunkte und schützt sie durch Berechtigungsprüfungen:
+
+<CodeBlock language="typescript" title="backend/backend-media/src/routes/index.routes.ts">
+  {IndexRoutesSource}
+</CodeBlock>

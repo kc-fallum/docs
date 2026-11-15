@@ -1,0 +1,8 @@
+{
+  "label": "SSO & Identity Portal",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Zentrales Single Sign-On Portal (auth.kcfallum.de) mit Passkeys, WebAuthn und Google OAuth"
+  }
+}

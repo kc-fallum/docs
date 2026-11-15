@@ -1,0 +1,70 @@
+---
+title: "Keys-Page"
+description: Detaillierte Dokumentation der API-Key-Verwaltung (key.page.ts, key.page.spec.ts)
+sidebar_position: 8
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import KeysPageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/keys/key.page.ts?raw';
+import KeySpecSource from '../../../../../frontend/frontend-dashboard/src/components/pages/keys/key.page.spec.ts?raw';
+
+# Keys-Page (`src/components/pages/keys/`)
+
+Die **Keys-Page** (`<keys-page>`) dient der Verwaltung von REST-API-Tokens für Drittsysteme, CLI-Tools und Automations-Skripte. Sie ermöglicht das Generieren, Rotieren, Rechte-Scope-Zuweisen und Widerrufen von Tokens.
+
+---
+
+## 1. Dateistruktur der Keys-Domäne
+
+```text
+src/components/pages/keys/
+├── key.page.ts          # Hauptkomponente (API-Key-Tabelle, Scopes, Modals)
+└── key.page.spec.ts     # Komponententests (Token-Generierung, Scope-Rendering)
+```
+
+---
+
+## 2. Wie die Page gerendert wird (Task-Lifecycle)
+
+Die Komponente nutzt einen kombinierten `@lit/task`, der parallel API-Keys und berechtigte Nutzer lädt:
+
+```typescript
+private apiKeysTask = new Task<[], { apiKeys: ApiKeyDTO[]; users: UserEntity[] }>(this, {
+  task: async () => {
+    const [apiKeys, users] = await Promise.all([
+      authClient.admin.getApiKeys(),
+      authClient.admin.getUsers()
+    ]);
+    return { apiKeys, users };
+  },
+  args: () => []
+});
+```
+
+* **`pending`-State:** Rendert `<skeleton-widget rows="5"></skeleton-widget>` im Hauptbereich des `<page-layout>`.
+* **`error`-State:** Zeigt `<error-widget message="Fehler beim Laden der API-Keys" retry></error-widget>`.
+* **`complete`-State:** Rendert die Tabelle via `<table-widget>` mit Name, Inhaber, Erstellungsdatum, Scopes und Kontextmenü-Aktionen (Löschen, Token neu generieren).
+
+---
+
+## 3. Scope-Matrix und Token-Sicherheit
+
+* **One-Time Secret Display:** Nach dem Generieren wird der Secret-Key in einem gesicherten Dialog mit Copy-to-Clipboard-Button genau einmalig angezeigt.
+* **Granulare Rechtezuweisung:** Berechtigungen basieren auf der Matrix aus Bereichen (`areas`: z.&nbsp;B. `termin`, `strafe`, `kasse`) und Aktionen (`apiKeyPermissionActions`: `read`, `write`, `admin`).
+* **Sicherheits-Guard:** Der Button zur Key-Erstellung erfordert die Berechtigung `authPermissions.API_KEY_CREATE`.
+
+---
+
+## 4. Live-Code: `key.page.ts`
+
+<CodeBlock language="typescript" title="src/components/pages/keys/key.page.ts" showLineNumbers>
+  {KeysPageSource}
+</CodeBlock>
+
+---
+
+## 5. Live-Code: `key.page.spec.ts`
+
+<CodeBlock language="typescript" title="src/components/pages/keys/key.page.spec.ts" showLineNumbers>
+  {KeySpecSource}
+</CodeBlock>

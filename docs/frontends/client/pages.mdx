@@ -1,0 +1,34 @@
+---
+title: "Client: Die 8 Page-Module"
+description: Detaillierte Übersicht aller 8 Pages im Client-Portal für Mitglieder und Besucher
+sidebar_position: 2
+---
+
+# Client: Die 8 Page-Module
+
+Das Client-Frontend gliedert seine Fachbereiche in 8 dedizierte Seiten-Module unter `src/components/pages/`:
+
+---
+
+## 1. Übersicht aller Pages
+
+| Page-Ordner | Hauptdatei | Zugriffsebene | Funktion & Besonderheiten |
+|---|---|---|---|
+| **`landing/`** | `landing.page.ts` | Öffentlich | Repräsentative Landing-Page für Gäste mit Vereinsvorstellung, Highlights und Handlungsaufforderung zum Login. |
+| **`homepage/`** | `home.page.ts` | Authentifiziert | Persönliches Dashboard für angemeldete Mitglieder: Zeigt den nächsten Termin, Anmeldestatus, offene Strafen und Schnellauswahl. |
+| **`termin/`** | `termin.page.ts` | Authentifiziert | Jahresübersicht aller Kegelabende, Anmelde-/Abmelde-Schaltflächen mit Fristprüfung und Detailansichten vergangener Runden. |
+| **`ranking/`** | `ranking.page.ts` | Authentifiziert | Visualisiert das aktuelle Saison-Ranking, Siegerpodest (`podium.widget`) und die ewige Bestenliste der Kegelbrüder. |
+| **`katalog/`** | `katalog.page.ts` | Authentifiziert | Interaktiver Strafenkatalog zum Nachschlagen aller Strafarten, Beträge und Kategorien inklusive Suchfilter. |
+| **`profile/`** | `profile.page.ts` | Authentifiziert | Ansicht des eigenen Spielerprofils mit Statistiken (Teilnahmequote, gezahlte Strafen, Pumpenkönig-Titel). |
+| **`account/`** | `account.page.ts` | Authentifiziert | Benutzer-Konto-Einstellungen: Aufgeteilt in Submodule für Passkeys (`account.passkey.ts`), Passwörter, aktive Sitzungen und Theme-Auswahl. |
+| **`about/`** | `about.page.ts` | Öffentlich | Vereinschronik, Geschichte des KC Fallum, Kegelregeln und Satzung. |
+
+---
+
+## 2. Das Account-Modul im Detail (`src/components/pages/account/`)
+
+Die Account-Seite ist modular in spezialisierte Einstellungs-Komponenten gegliedert:
+* **`account.passkey.ts`:** Verwaltung biometrischer Passkeys (Registrieren neuer FIDO2-Schlüssel, Umbenennen und Löschen).
+* **`account.session.ts`:** Liste aller aktiven Anmeldesitzungen mit IP-Adresse und Browser-Typ inklusive Ein-Klick-Abmeldung aller anderen Geräte.
+* **`account.theme.ts`:** Farbschema-Wahlschalter (System, Light, Dark).
+* **`account.spieler.ts`:** Verknüpfungsanzeige mit dem zugeordneten Spielerprofil.

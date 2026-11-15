@@ -1,0 +1,49 @@
+---
+title: "Spieler-Page"
+description: Detaillierte Dokumentation der Mitgliederverwaltung (spieler.page.ts, spieler.form.ts, spieler.service.ts)
+sidebar_position: 5
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import SpielerPageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/spieler/spieler.page.ts?raw';
+import SpielerFormSource from '../../../../../frontend/frontend-dashboard/src/components/pages/spieler/spieler.form.ts?raw';
+
+# Spieler-Page (`src/components/pages/spieler/`)
+
+Die **Spieler-Page** (`<spieler-page>`) verwaltet alle Vereinsmitglieder, deren Ränge (`VORSTAND`, `MITGLIED`, `GAST`), Kontaktdaten und Verknüpfungen zu Benutzerkonten.
+
+---
+
+## 1. Die 5 Dateien der Spieler-Domäne
+
+```text
+src/components/pages/spieler/
+├── spieler.page.ts         # Page-Komponente mit Task & Profilkarten
+├── spieler.page.css        # Raster- und Karten-Styles
+├── spieler.form.ts         # SpielerFormService (Mitglieder-Modal)
+├── spieler.page.spec.ts    # Komponententests
+└── (src/services/spieler.service.ts) # SpielerService (API-Delegation)
+```
+
+---
+
+## 2. Rendering & Ansichten-Umschaltung
+
+* **Karten- & Tabellenansicht:** Ermöglicht den Wechsel zwischen optischen Profilkarten (`<profile-card-widget>`) und einer kompakten Tabelle (`<table-widget>`).
+* **Verknüpfung mit SSO:** Überprüft, ob ein Mitglied bereits ein aktives SSO-Benutzerkonto besitzt oder eingeladen werden muss.
+
+---
+
+## 3. Live-Code: `spieler.page.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/spieler/spieler.page.ts">
+  {SpielerPageSource}
+</CodeBlock>
+
+---
+
+## 4. Live-Code: `spieler.form.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/spieler/spieler.form.ts">
+  {SpielerFormSource}
+</CodeBlock>

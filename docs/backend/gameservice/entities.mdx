@@ -1,0 +1,53 @@
+---
+title: "Gameservice: Entitäten & Datenmodell"
+description: Live-Imports und Dokumentation aller 3 TypeORM-Entitäten der gameservice-Verwaltung
+sidebar_position: 2
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import InstanceSource from '../../../../backend/backend-gameservice/src/models/entities/instance.entity.ts?raw';
+import SettingsSource from '../../../../backend/backend-gameservice/src/models/entities/instanceSettings.entity.ts?raw';
+import ProfileSource from '../../../../backend/backend-gameservice/src/models/entities/profile.entity.ts?raw';
+
+# Gameservice Entitäten (`kegelclub` DB)
+
+Der Gameservice speichert Server-Instanzen, deren Spielregeln und Ausführungsprofile in der PostgreSQL-Datenbank.
+
+---
+
+## 1. `InstanceEntity`
+Repräsentiert eine Minecraft-Server-Instanz und deren Container-Metadaten.
+
+* **Felder:**
+  * `name`: Anzeigename der Welt / des Servers.
+  * `containerId`: ID des zugehörigen Docker-Containers.
+  * `port`: Zugewiesener interner Server-Port (z. B. `25600`).
+  * `status`: Aktueller Zustand (`STOPPED`, `STARTING`, `RUNNING`, `CRASHED`).
+  * `type`: Server-Plattform (`JAVA_PAPER`, `BEDROCK`).
+* **Beziehungen:** 1:1 zu `InstanceSettingsEntity`.
+
+<CodeBlock language="typescript" title="backend/backend-gameservice/src/models/entities/instance.entity.ts">
+  {InstanceSource}
+</CodeBlock>
+
+---
+
+## 2. `InstanceSettingsEntity`
+Definiert Konfigurationen, Speicherlimits und Gamerules für eine Instanz.
+
+* **Felder:** `maxPlayers`, `motd`, `difficulty`, `pvp`, `viewDistance`, `memoryLimit`, `gamerules` (JSONB).
+
+<CodeBlock language="typescript" title="backend/backend-gameservice/src/models/entities/instanceSettings.entity.ts">
+  {SettingsSource}
+</CodeBlock>
+
+---
+
+## 3. `ProfileEntity`
+Speichert vorkonfigurierte Vorlagen für Server-Setups (z. B. Vanilla Survival, Minigames, Event-Modi).
+
+* **Felder:** `name`, `description`, `version`, `plugins` (Liste von JAR-Namen), `worldTemplateKey`.
+
+<CodeBlock language="typescript" title="backend/backend-gameservice/src/models/entities/profile.entity.ts">
+  {ProfileSource}
+</CodeBlock>

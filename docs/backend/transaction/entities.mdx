@@ -1,0 +1,30 @@
+---
+title: "Transaction Service: Entitäten & Datenmodell"
+description: Live-Import und Dokumentation der TransactionEntity der transaction-Datenbank
+sidebar_position: 2
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import TransactionSource from '../../../../backend/backend-transaction/src/models/entities/transaction.entity.ts?raw';
+
+# Transaction Entitäten (`transaction` DB)
+
+Der Transaction Service verwaltet finanzielle Buchungssätze in der dedizierten PostgreSQL-Datenbank `transaction`.
+
+---
+
+## 1. `TransactionEntity`
+Dokumentiert eine finanzielle Buchungsbewegung im Kassenbuch des Kegelclubs.
+
+* **Felder:**
+  * `betrag`: Vorzeichenbehafteter oder absoluter Betrag in Euro (`decimal`).
+  * `datum`: Rechnungs- oder Buchungsdatum (`timestamp`).
+  * `typ`: Klassifizierung der Bewegung (`EINNAHME` oder `AUSGABE`).
+  * `kategorie`: Buchungskategorie (z. B. `BAHNMIETE`, `STRAFEN`, `BEITRAEGE`, `GETRAENKE`, `SONSTIGES`).
+  * `belegId`: Optionale UUID des im `backend-media` abgelegten Belegs (PDF oder Bildquittung).
+  * `beschreibung`: Freitext-Verwendungszweck.
+  * `autorId`: Benutzer-ID des Kassenwarts, der die Buchung angelegt hat.
+
+<CodeBlock language="typescript" title="backend/backend-transaction/src/models/entities/transaction.entity.ts">
+  {TransactionSource}
+</CodeBlock>

@@ -1,0 +1,48 @@
+---
+title: "Nutzer-Page"
+description: Detaillierte Dokumentation der Benutzerkontenverwaltung (nutzer.page.ts, nutzer.form.ts)
+sidebar_position: 6
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import NutzerPageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/nutzer/nutzer.page.ts?raw';
+import NutzerFormSource from '../../../../../frontend/frontend-dashboard/src/components/pages/nutzer/nutzer.form.ts?raw';
+
+# Nutzer-Page (`src/components/pages/nutzer/`)
+
+Die **Nutzer-Page** (`<nutzer-page>`) verwaltet alle registrierten SSO-Benutzerkonten, Rollenzuweisungen und Sicherheitsstufen.
+
+---
+
+## 1. Die Dateien der Nutzer-Domäne
+
+```text
+src/components/pages/nutzer/
+├── nutzer.page.ts         # Page-Komponente (Task, Suche, Profilkarten)
+├── nutzer.form.ts         # NutzerFormService (Rollen- und Kontomodal)
+└── nutzer.page.spec.ts    # Komponententests
+```
+
+---
+
+## 2. Rendering & Rollenverwaltung
+
+* **Lade-Task:** Ruft `authClient.getAllUsers()` ab.
+* **Rollen-Matrix:** Erlaubt autorisierten Administratoren das Zuweisen von Berechtigungsrollen (`ADMIN`, `KASSENWART`, `STRAFENWART`, `USER`, `GUEST`).
+* **Sicherheit:** Verwaltung von Kontosperrungen (`isActive`) und Auditierung von Letztanmeldungen.
+
+---
+
+## 3. Live-Code: `nutzer.page.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/nutzer/nutzer.page.ts">
+  {NutzerPageSource}
+</CodeBlock>
+
+---
+
+## 4. Live-Code: `nutzer.form.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/nutzer/nutzer.form.ts">
+  {NutzerFormSource}
+</CodeBlock>

@@ -1,0 +1,62 @@
+---
+title: "Termin-Page"
+description: Detaillierte Dokumentation der Terminverwaltung (termin.page.ts, termin.form.ts, termin.service.ts)
+sidebar_position: 1
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import TerminPageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/termin/termin.page.ts?raw';
+import TerminFormSource from '../../../../../frontend/frontend-dashboard/src/components/pages/termin/termin.form.ts?raw';
+
+# Termin-Page (`src/components/pages/termin/`)
+
+Die **Termin-Page** (`<termin-page>`) ist das Herzstück der organisatorischen Verwaltung im Dashboard. Sie steuert das Planen, Durchführen, Bearbeiten und Abschließen von Kegelabenden.
+
+---
+
+## 1. Die 5 Dateien der Termin-Domäne
+
+```text
+src/components/pages/termin/
+├── termin.page.ts          # Page-Komponente (Task, Layout, State-Rendering)
+├── termin.page.css         # Stylesheet mit variables.css-Tokens
+├── termin.form.ts          # TerminModalHandler (ModalForm-Dialoge)
+├── termin.page.spec.ts     # Komponententests
+└── (src/services/termin.service.ts) # Service-Klasse mit API-Delegation
+```
+
+---
+
+## 2. Wie die Page gerendert wird (Task-Lifecycle)
+
+Die Komponente kapselt den Datenabruf reaktiv in einem `@lit/task`:
+1. **Lade-Task (`loadTermine`):** Ruft `kasseClient.getTerminKasse({ simple: true, order: "desc" })` ab.
+2. **`pending`-State:** Rendert `<skeleton-widget rows="5"></skeleton-widget>` im Haupt-Slot von `<page-layout>`.
+3. **`error`-State:** Zeigt ein `<error-widget>` mit benutzerfreundlicher Fehlermeldung und Retry-Option.
+4. **`complete`-State:** Übergibt die Liste `KasseTermin[]` an `renderContent()`.
+
+---
+
+## 3. Formular- & Modal-Logik (`termin.form.ts`)
+
+Statt Formulareingaben in der Komponente zu verwalten, delegiert die Page an den ausgelagerten `TerminModalHandler`:
+* Lädt beim Öffnen aktive Spieler über `spielerClient.getAllSpieler({ active: true })`.
+* Erzeugt ein barrierefreies Dialogfenster via `ModalForm`.
+* Erfasst Titel, Datum/Uhrzeit (`calendar`), Beschreibung und den Pumpenkönig (`dropdown`).
+* Validiert vor der Übergabe an `terminClient.createTermin()`.
+
+---
+
+## 4. Live-Code: `termin.page.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/termin/termin.page.ts">
+  {TerminPageSource}
+</CodeBlock>
+
+---
+
+## 5. Live-Code: `termin.form.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/termin/termin.form.ts">
+  {TerminFormSource}
+</CodeBlock>

@@ -1,0 +1,52 @@
+---
+title: "Gameserver: Web-Interface & RCON-Streaming"
+description: Minecraft-Server-Verwaltung (game.kcfallum.de) mit WebSocket-Konsole, Backups und Beszel-Telemetrie
+sidebar_position: 1
+---
+
+# Gameserver Web-Interface (`frontend-gameserver`)
+
+Das Submodul `frontend/frontend-gameserver` ist das Steuerungs- und Überwachungsportal für Spieleserver unter `https://game.kcfallum.de` (Port 8082).
+
+---
+
+## 1. Zweck & Funktionsumfang
+
+* **Live-Status:** Visualisierung von Online-Spielern, Ping, TPS (Ticks per Second) und Ressourcenverbrauch (RAM, CPU).
+* **Interaktive RCON-Web-Konsole:** Echtzeit-Eingabe und Streaming der Minecraft-Server-Ausgaben via WebSockets.
+* **Server-Lebenszyklus:** Starten, Herunterfahren, Neustarten und Klonen von Server-Instanzen.
+* **Gamerules & Konfiguration:** Grafischer Editor für `server.properties` und Spielregeln (`keepInventory`, `pvp`, `difficulty`).
+* **Backup-Snapshots:** Anzeige der mit Restic in MinIO gesicherten Welt-Snapshots und Auslösen von Wiederherstellungen.
+
+---
+
+## 2. Architektur: WebSocket-Streaming der Konsole
+
+Die interaktive Konsole nutzt die Socket.io-Verbindung zum `backend-gameservice`:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Gameserver-Admin
+    participant UI as console.widget.ts
+    participant Client as consoleClient
+    participant GW as API Gateway (WS Upgrade)
+    participant Game as backend-gameservice (RCON)
+
+    Admin->>UI: Eingabe von "/say Hallo Verein"
+    UI->>Client: consoleClient.sendCommand("instance-1", "say Hallo Verein")
+    Client->>GW: WebSocket Emit("rcon-command", payload)
+    GW->>Game: Proxy an gameserver:3004
+    Game->>Game: RCON Execution auf Port 25575
+    Game-->>GW: WebSocket Emit("console-output", "[Server] Hallo Verein")
+    GW-->>Client: Weiterleitung an Client
+    Client-->>UI: Anhängen der Zeile an das TTY-Terminal
+```
+
+---
+
+## 3. Berechtigungs-Matrix
+
+* **Ansicht (`gameserver:view`):** Alle authentifizierten Vereinsmitglieder dürfen den Serverstatus und die Spieleranzahl sehen.
+* **Steuerung (`gameserver:manage`):** Nur Spieler mit Administrator- oder Gameserver-Rolle dürfen Server starten/stoppen und Backups erstellen.
+* **Konsole (`gameserver:console`):** Streng geschützt; nur berechtigte Server-Operatoren haben Zugriff auf die interaktive RCON-Eingabe.

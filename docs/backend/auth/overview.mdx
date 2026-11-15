@@ -1,0 +1,61 @@
+---
+title: "Auth & Identity Service: Übersicht & Architektur"
+description: Architektur, Sicherheitskonzepte und OIDC-Protokolle des backend-auth Microservice
+sidebar_position: 1
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import IndexRoutesSource from '../../../../backend/backend-auth/src/routes/index.routes.ts?raw';
+
+# Auth & Identity Service (`backend-auth`)
+
+Der **Auth Service** ist der zentrale Identitäts- und Autorisierungsdienst der KC Fallum Plattform. Er kombiniert klassische REST-Authentifizierung mit modernsten Identitätsstandards wie **OpenID Connect (OIDC)** und passwortlosen **FIDO2/WebAuthn-Passkeys**.
+
+---
+
+## 1. Aufgaben & Sicherheits-Schwerpunkte
+
+* **OpenID Connect Provider (`/oidc`):** Vollwertige OIDC-Endpunkte (`.well-known/openid-configuration`, `authorize`, `token`, `userinfo`) zur Authentifizierung von Subsystemen wie Beszel-Monitoring.
+* **Passwortlose FIDO2/WebAuthn-Anmeldung:** Registrierung und Verifikation biometrischer Passkeys (TouchID, FaceID, Windows Hello, YubiKey) über `@simplewebauthn/server`.
+* **Google OAuth2 Integration:** Single Sign-On (SSO) mittels Passport-Strategie (`passport-google-oauth20`).
+* **Session-Verwaltung in Redis:** Schnelle Session-Lookup- und Invalidierungsmechanismen via Redis-Cache und HTTP-Only-Cookies auf `.kcfallum.de`.
+* **API-Key-Verwaltung:** Erstellung kryptografisch sicherer API-Tokens mit granularen Permission-Scopes für Drittanwendungen.
+* **Event-Broadcasting:** Publiziert Profil-Events (`events.profile.created`, `events.profile.updated`) via RabbitMQ an den Core-Service.
+
+---
+
+## 2. Architektur des Authentifizierungs-Flows
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Benutzer
+    participant SPA as SSO-Frontend
+    participant Auth as backend-auth
+    participant Redis as Redis Session
+    participant DB as auth DB (Postgres)
+    participant Core as backend-core (AMQP)
+
+    User->>SPA: Klick auf "Passkey Login"
+    SPA->>Auth: POST /auth/webauthn/generate-options
+    Auth->>Auth: Erzeuge Challenge
+    Auth-->>SPA: WebAuthn Challenge & RP ID
+    SPA->>User: Browser fordert Biometrie an
+    User-->>SPA: Signierte Assertion
+    SPA->>Auth: POST /auth/webauthn/verify
+    Auth->>DB: Lade Public Key (Credential)
+    Auth->>Auth: Validiere Signatur & Counter
+    Auth->>Redis: Erzeuge Session (TTL 7d)
+    Auth-->>SPA: Setze HTTP-Only Cookie (.kcfallum.de)
+    SPA->>User: Weiterleitung ins Dashboard
+```
+
+---
+
+## 3. Routen-Übersicht & Index-Schalthebel
+
+Die Datei `src/routes/index.routes.ts` gliedert die Authentifizierung in spezialisierte Controller:
+
+<CodeBlock language="typescript" title="backend/backend-auth/src/routes/index.routes.ts">
+  {IndexRoutesSource}
+</CodeBlock>

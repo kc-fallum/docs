@@ -1,0 +1,53 @@
+---
+title: "Settings Service: Konfigurations-Referenz"
+description: Detaillierte Aufschlüsselung aller Config-Dateien und Umgebungsvariablen von backend-setting
+sidebar_position: 3
+---
+
+# Settings Service: Konfigurations-Referenz
+
+Dieses Dokument bietet eine vollständige Referenz aller Konfigurationsdateien und Umgebungsvariablen des `backend-setting`.
+
+---
+
+## 1. Konfigurationsdateien im Detail
+
+### 1.1 `config/appearance.config.ts`
+Verwaltet Vereins-Branding und Farbschemata:
+* **Pfad:** `data/appearance-config.json`
+* **Struktur:**
+  ```typescript
+  export interface AppearanceConfigType {
+    club: string;
+    logoDocumentId?: string | null;
+    cssVariables: {
+      light: CSSVariables;
+      dark: CSSVariables;
+    };
+  }
+  ```
+* **CSS-Tokens:** Definiert Farbwerte für Primäridentität (`colorIdentity: "#26523f"`), Erfolge, Fehler, Warnungen, Text- und Hintergrundfarben.
+* **Auto-Broadcast:** Beim Speichern einer neuen Konfiguration wird automatisch ein Event an den Message Broker gesendet (`appearance.updated`), sodass alle Frontends die neuen Werte laden.
+
+---
+
+### 1.2 `config/upload.config.ts`
+Konfiguriert den Logo-Upload:
+* Verwendet `multer.memoryStorage()`.
+* Erlaubt ausschließlich Bildformate (`image/jpeg`, `image/png`, `image/webp`).
+* Begrenzt die Dateigröße auf die in `@kc-fallum/shared` definierte Konstante `MAX_AVATAR_FILE_SIZE`.
+
+---
+
+## 2. Umgebungsvariablen (`.env`)
+
+| Variable | Erforderlich | Standard | Beschreibung |
+|---|---|---|---|
+| `PORT` | Nein | `3005` | HTTP-Port für Settings-Service |
+| `DB_HOST` | Ja | – | Hostname der PostgreSQL-Instanz |
+| `DB_PORT` | Nein | `5432` | PostgreSQL-Port |
+| `DB_DATABASE` | Ja | `settings` | Name der relationalen Datenbank |
+| `DB_USERNAME` | Ja | – | PostgreSQL-Benutzer |
+| `DB_PASSWORD` | Ja | – | PostgreSQL-Passwort |
+| `JWT_SECRET` | Ja | – | Shared Secret zur Validierung von Session-Tokens |
+| `RABBITMQ_URL` | Ja | – | AMQP-Verbindungs-URI |

@@ -1,0 +1,26 @@
+---
+title: "Transaction Service: Service-Klassen & Buchungs-Logik"
+description: Detaillierte Übersicht des TransactionService und dessen Zusammenspiel mit dem Media Service
+sidebar_position: 3
+---
+
+# Transaction Service: Service-Klassen
+
+Die gesamte buchhalterische Geschäftslogik ist in der Klasse `TransactionService` gekapselt:
+
+---
+
+## 1. `TransactionService`
+
+### Aufgaben und Kernoperationen:
+* **Buchungssatz erstellen (`createTransaction`):**
+  1. Validiert Betrag, Kategorie und Berechtigung (`kasse:manage`).
+  2. Sofern eine Datei angehängt wurde, wird diese über den injizierten `documentClient` an das `backend-media` gesendet.
+  3. Die von `backend-media` zurückgelieferte Dokumenten-ID wird als `belegId` in der `TransactionEntity` gespeichert.
+  4. Die Transaktion wird in die PostgreSQL-Tabelle `transaction` geschrieben.
+* **Kassenprüfung & Saldenberechnung (`calculateBalance`):**
+  * Summiert alle `EINNAHME`-Buchungen abzüglich aller `AUSGABE`-Buchungen über frei wählbare Zeiträume.
+* **Belegabruf (`getReceiptUrl`):**
+  * Ruft für eine gegebene `belegId` über den `documentClient` eine frische, signierte Presigned-URL beim `backend-media` ab und leitet den Download an das Frontend weiter.
+* **Google Sheets Migration (`syncWithSheets`):**
+  * Liest historische Kontobewegungen (z. B. aus PayPal und N26 Konten) aus den Bereichen von `tabellenblatt11` ein.

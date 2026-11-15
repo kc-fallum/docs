@@ -1,0 +1,50 @@
+---
+title: "Katalog-Page"
+description: Detaillierte Dokumentation des Strafenkatalogs (katalog.page.ts, katalog.form.ts, katalog.service.ts)
+sidebar_position: 4
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import KatalogPageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/katalog/katalog.page.ts?raw';
+import KatalogFormSource from '../../../../../frontend/frontend-dashboard/src/components/pages/katalog/katalog.form.ts?raw';
+
+# Katalog-Page (`src/components/pages/katalog/`)
+
+Die **Katalog-Page** (`<katalog-page>`) verwaltet den offiziellen Strafen- und Spielkatalog des Vereins inklusive Standard-Strafbeträgen, Symbolen und Beschreibungen.
+
+---
+
+## 1. Die 5 Dateien der Katalog-Domäne
+
+```text
+src/components/pages/katalog/
+├── katalog.page.ts         # Page-Komponente mit Task & Suche
+├── katalog.page.css        # Kachel- und Icon-Styles
+├── katalog.form.ts         # KatalogFormService (Erfassungsmodal)
+├── katalog.page.spec.ts    # Komponententests
+└── (src/services/katalog.service.ts) # KatalogService (Validierung & API-Calls)
+```
+
+---
+
+## 2. Rendering & Suchfilterung
+
+* **Echtzeit-Suche:** Nutzt `<search-bar>` zur clientseitigen Filterung nach Namen oder Beschreibungen.
+* **Kategorisierung:** Gruppiert Einträge nach `typ` (`KEGEL`, `SPIEL`, `VERGEHEN`).
+* **Rechte-Prüfung:** Nur Vorstände mit `corePermissions.hasPermission(user, "katalog", "create")` sehen Bearbeitungs- und Löschschaltflächen.
+
+---
+
+## 3. Live-Code: `katalog.page.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/katalog/katalog.page.ts">
+  {KatalogPageSource}
+</CodeBlock>
+
+---
+
+## 4. Live-Code: `katalog.form.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/katalog/katalog.form.ts">
+  {KatalogFormSource}
+</CodeBlock>

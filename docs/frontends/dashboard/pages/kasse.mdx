@@ -1,0 +1,58 @@
+---
+title: "Kassen-Page"
+description: Detaillierte Dokumentation des Kassenbuchs (kasse.page.ts, transaction.form.ts, transaction.service.ts)
+sidebar_position: 3
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import KassePageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/kasse/kasse.page.ts?raw';
+import TransactionFormSource from '../../../../../frontend/frontend-dashboard/src/components/pages/kasse/transaction.form.ts?raw';
+
+# Kassen-Page (`src/components/pages/kasse/`)
+
+Die **Kassen-Page** (`<kasse-page>`) verwaltet das vollständige Kassenbuch des Kegelvereins, aggregiert Kontobewegungen und visualisiert Einnahmen und Ausgaben über interaktive Diagramme.
+
+---
+
+## 1. Die 5 Dateien der Kassen-Domäne
+
+```text
+src/components/pages/kasse/
+├── kasse.page.ts           # Page-Komponente mit Task, Charts und Tabellen
+├── kasse.page.css          # Stylesheet mit Diagramm- und Salden-Styling
+├── transaction.form.ts     # TransactionFormService (Beleg- und Buchungsdialog)
+├── kasse.page.spec.ts      # Komponententests
+└── (src/services/transaction.service.ts) # TransactionService (API-Delegation)
+```
+
+---
+
+## 2. Wie die Page gerendert wird (Charts & Salden)
+
+1. **Reaktiver Task:** Lädt Kassenbestände und Buchungssätze über `kasseClient.getKassenstand()` und `transactionClient.getTransactions()`.
+2. **Direktiven:** Nutzt `choose()` zum Umschalten zwischen Diagrammansichten (Balken-, Linien-, Tortendiagramm) und `when()` zur Berechtigungssteuerung.
+3. **Beleg-Viewer:** Erlaubt den direkten Abruf signierter Download-URLs (`openMediaInNewTab`) für Rechnungsbelege aus dem S3-Speicher.
+
+---
+
+## 3. Formular- & Modal-Logik (`transaction.form.ts`)
+
+Der `TransactionFormService` steuert die Verbuchung von Geldbewegungen:
+* Erfasst Betrag, Typ (`EINNAHME` / `AUSGABE`), Kategorie und Datum.
+* Unterstützt Datei-Uploads für Quittungen, die per REST an den Media-Service weitergeleitet werden.
+
+---
+
+## 4. Live-Code: `kasse.page.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/kasse/kasse.page.ts">
+  {KassePageSource}
+</CodeBlock>
+
+---
+
+## 5. Live-Code: `transaction.form.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/kasse/transaction.form.ts">
+  {TransactionFormSource}
+</CodeBlock>

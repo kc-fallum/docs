@@ -1,0 +1,8 @@
+{
+  "label": "Media Service",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Zentraler Dateispeicher, S3/MinIO Integration, Sharp Bildkompression und Presigned URL Verwaltung"
+  }
+}

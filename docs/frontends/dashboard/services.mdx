@@ -1,0 +1,42 @@
+---
+title: "Dashboard: Die Service-Schicht & CrudService"
+description: Detaillierte Dokumentation aller 8 Services im Dashboard und der generischen CrudService-Basisklasse
+sidebar_position: 3
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import CrudServiceSource from '../../../../frontend/frontend-dashboard/src/services/crud.service.ts?raw';
+
+# Dashboard: Die Service-Schicht
+
+Alle nicht-visuellen Aufgaben, Datenmutationen und API-Client-Aufrufe sind im Dashboard in 8 spezialisierten Service-Klassen unter `src/services/` ausgelagert.
+
+---
+
+## 1. Die generische Basisklasse: `CrudService`
+
+Um wiederkehrende Logik für Erstellen, Bearbeiten und Löschen nicht in jeder Komponente zu duplizieren, erben alle Domänenservices von `CrudService<TEntity, TCreate, TUpdate>`:
+
+### Kernfeatures von `CrudService`:
+1. **Automatisches Feedback:** Triggert bei Erfolg oder Fehler automatisch den `NotificationHandler` mit einheitlichen Meldungen.
+2. **Silent-Modus (`options.silent = true`):** Unterdrückt Toasts für Hintergrundoperationen (z. B. automatisches Speichern).
+3. **Lösch-Bestätigungsdialog (`delete`):** Öffnet vor dem Löschen automatisch ein modales Bestätigungsfenster (`MessageForm`), sodass Komponenten dies nicht selbst implementieren müssen.
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/services/crud.service.ts">
+  {CrudServiceSource}
+</CodeBlock>
+
+---
+
+## 2. Alle 8 Dashboard-Services im Überblick
+
+| Service-Klasse | Dateipfad | Erbt von | Besondere Fachlogik |
+|---|---|---|---|
+| **`TerminService`** | `src/services/termin.service.ts` | `CrudService` | Verwaltet Anwesenheitsreihenfolgen (`updateSpielerOrder`), Sortierungen und Validierung von Vor- und Nachbereitungen. |
+| **`StrafeService`** | `src/services/strafe.service.ts` | `CrudService` | Markiert Strafen als bezahlt (`markAsPaid`), führt Stornierungen durch und berechnet Zwischensummen. |
+| **`KatalogService`** | `src/services/katalog.service.ts` | `CrudService` | Validiert Standardbeträge, filtert nach Kategorien (`KEGEL`, `SPIEL`, `VERGEHEN`) und steuert Icons. |
+| **`SpielerService`** | `src/services/spieler.service.ts` | `CrudService` | Filtert aktive/inaktive Spieler, berechnet Ränge (`VORSTAND`, `MITGLIED`, `GAST`) und verknüpft Benutzer-Accounts. |
+| **`TransactionService`** | `src/services/transaction.service.ts` | `CrudService` | Handhabt Einnahmen/Ausgaben, delegiert Beleg-Uploads an das Backend und generiert Download-Links. |
+| **`TerminstrafenService`** | `src/services/terminstrafen.service.ts` | – | Hochoptimierter State-Manager für die Live-Tafel am Spielabend. Puffert schnelle Klicks und sendet Bulk-Updates. |
+| **`SpreadsheetService`** | `src/services/spreadsheet.service.ts` | – | Clientseitiger Importer und Parser für Google-Sheets-Exporte und CSV-Backups zur Migration historischer Daten. |
+| **`CrudService`** | `src/services/crud.service.ts` | – | Abstrakte Basisklasse für alle Standard-CRUD-Operationen und Bestätigungs-Modals. |

@@ -1,0 +1,74 @@
+---
+title: "Core Service: Konfigurations-Referenz"
+description: Detaillierte Aufschlüsselung aller Config-Dateien und Umgebungsvariablen von backend-core
+sidebar_position: 4
+---
+
+# Core Service: Konfigurations-Referenz
+
+Dieses Dokument bietet eine vollständige Referenz aller Konfigurationsdateien, Datenspeicher und Umgebungsvariablen des `backend-core`.
+
+---
+
+## 1. Konfigurationsdateien im Detail
+
+### 1.1 `config/limit.config.ts`
+Definiert Paginierungs- und Abfragelimits zur Schonung der Datenbank:
+
+| Konstante | Standardwert | Zweck |
+|---|---|---|
+| `DEFAULT_TERMINE_LIMIT` | `90` | Standardanzahl abgerufener Termine pro REST-Abfrage |
+| `DEFAULT_STRAFEN_LIMIT` | `160` | Maximale Anzahl an Strafen im Dashboard |
+| `DEFAULT_KATALOG_LIMIT` | `90` | Obergrenze für Katalogeinträge |
+| `DEFAULT_BEITRAG_LIMIT` | `160` | Obergrenze geladener Monatsbeiträge |
+| `MAX_BEITRAG_LIMIT` | `1000` | Absolutes Hard-Limit für historische Beitragssuchen |
+
+---
+
+### 1.2 `config/beitrag.config.ts`
+Verwaltet den monatlich fälligen Standardbeitrag dynamisch im Dateisystem:
+* **Pfad:** `data/beitrag-config.json`
+* **Struktur:** `\{ "betrag": number \}`
+* **Funktion:** `saveBeitragConfig(newConfig)` aktualisiert den Wert zur Laufzeit ohne Neustart des Containers.
+
+---
+
+### 1.3 `config/katalog.config.ts`
+Verwaltet Styling- und Farbinformationen für Straftypen in der Benutzeroberfläche:
+* **Pfad:** `data/katalog-config.json`
+* **Struktur:** Array von `\{ "name": string, "color": string, "icon": string \}`.
+
+---
+
+### 1.4 `config/strafenkatalog.config.ts`
+Enthält Stammdaten und Zuordnungsregeln für Altdaten aus Google Sheets:
+* **Stammdaten-Array:** Standardkatalog mit vordefinierten Strafen (z. B. "Pumpe werfen", "Zu spät kommen", "Falsch gewischt").
+* **`strafenNameMapping`:** Mappt unpräzise Schreibweisen aus alten Google Sheets Tabellenzeilen auf die standardisierten Bezeichner der Entitäten.
+* **`strafenUebersicht` & `beitragConfig`:** Definiert die Zellbereiche für den Google-Sheets-Sync (`sheet: "Strafenübersicht"`, `katalogRange: "Strafenübersicht!E4:5"`, etc.).
+
+---
+
+### 1.5 `config/socket.config.ts`
+Konfiguriert die Socket.io WebSocket-Verbindung für den Core Service:
+* **Handshake & Auth:** Verwendet `socketAuthMiddleware` zur Extraktion und Verifikation des Session-Cookies.
+* **Subscription:** Unterstützt `payload.type === SubscriptionType.DOMAIN`. Verlangt Leserechte (`checkPermission(user, "termin", "view")`) und tritt dem Raum `domain` bei.
+* **Broadcasting:** Stellt `app.locals.broadcast` bereit. Prüft vor dem Senden an einen Socket-Client granular, ob der authentifizierte Benutzer berechtigt ist, den Event-Inhalt (`TERMIN_CLOSED` oder `STRAFE_CREATED`) einzusehen.
+
+---
+
+## 2. Umgebungsvariablen (`.env`)
+
+| Variable | Erforderlich | Standard | Beschreibung |
+|---|---|---|---|
+| `PORT` | Nein | `3000` | HTTP-Port, an dem der Express-Server lauscht |
+| `NODE_ENV` | Nein | `development` | Umgebung (`production` schaltet Stacktraces ab) |
+| `DB_HOST` | Ja | – | Hostname der PostgreSQL-Instanz (`postgres`) |
+| `DB_PORT` | Nein | `5432` | Port des PostgreSQL-Servers |
+| `DB_DATABASE` | Ja | `kegelclub` | Name der relationalen Datenbank |
+| `DB_USERNAME` | Ja | – | PostgreSQL-Benutzername |
+| `DB_PASSWORD` | Ja | – | PostgreSQL-Passwort |
+| `RABBITMQ_URL` | Ja | – | AMQP-Verbindungs-URI (z. B. `amqp://rabbitmq:5672`) |
+| `JWT_SECRET` | Ja | – | Shared Secret zur Validierung von Token-Signaturen |
+| `COOKIE_DOMAIN` | Nein | `.kcfallum.de` | Domain für Session-Cookies |
+| `GOOGLE_SHEET_ID` | Ja | – | ID des verknüpften Google Spreadsheets für Altdaten-Sync |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Ja | `secrets/migration-account.json` | Pfad zur JSON-Schlüsseldatei des Google Cloud Service Accounts |

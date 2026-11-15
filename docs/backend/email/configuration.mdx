@@ -1,0 +1,59 @@
+---
+title: "Email & Push Service: Konfigurations-Referenz"
+description: Detaillierte Aufschlüsselung aller Config-Dateien, SMTP-, IMAP- und VAPID-Parameter von backend-email
+sidebar_position: 2
+---
+
+# Email & Push Service: Konfigurations-Referenz
+
+Dieses Dokument bietet eine vollständige Referenz aller Konfigurationsdateien und Umgebungsvariablen des `backend-email`.
+
+---
+
+## 1. Konfigurationsdateien im Detail
+
+### 1.1 `src/config.ts`
+Bündelt SMTP-, IMAP- und Template-Konfigurationen:
+* **`emailTemplateConfig`:**
+  * `baseUrl`: Basis-URL der Client-Applikation für Links in E-Mails (`CLIENT_BASE_URL`).
+  * `from`: Absendername ("Kegelclub") und Absenderadresse (`EMAIL_USER`).
+  * `replyTo`: Support-Adresse für Rückfragen (`SUPPORT_EMAIL`).
+* **`emailConfig` (SMTP Transport):**
+  * Konfiguriert den Nodemailer-Transporter mit Host, Port, TLS (`secure`) und Authentifizierung.
+* **`imapConnectionConfig` (IMAP Client):**
+  * Hält Zugangsdaten für den optionalen Abruf eingehender Vereins-E-Mails bereit.
+
+---
+
+### 1.2 `src/emails/tailwind.config.ts`
+Definiert das Design-System für React Email Templates:
+* Integriert vereinstypische Farben (Grüntöne, Akzente) direkt in den Inline-CSS-Compiler von React Email.
+
+---
+
+### 1.3 WebPush- & VAPID-Konfiguration
+* Verwendet die Bibliothek `web-push`.
+* Registriert VAPID-Details über `webpush.setVapidDetails(subject, publicKey, privateKey)`.
+* Verschlüsselt Payloads nach dem RFC-8291 Standard (Payload Encryption for Web Push).
+
+---
+
+## 2. Umgebungsvariablen (`.env`)
+
+| Variable | Erforderlich | Standard | Beschreibung |
+|---|---|---|---|
+| `PORT` | Nein | `3006` | HTTP-Port für Healthchecks |
+| `RABBITMQ_URL` | Ja | – | AMQP-Verbindungs-URI zu RabbitMQ |
+| `EMAIL_HOST` | Ja | – | Hostname des SMTP-Servers (z. B. `smtp.resend.com`) |
+| `EMAIL_PORT` | Nein | `587` | SMTP-Port (465 für SSL, 587 für STARTTLS) |
+| `EMAIL_SECURE` | Nein | `false` | `true` für SSL auf Port 465 |
+| `EMAIL_USER` | Ja | – | SMTP-Benutzername |
+| `EMAIL_PASS` | Ja | – | SMTP-Passwort bzw. API-Key |
+| `SUPPORT_EMAIL` | Nein | `info@kcfallum.de` | Reply-To E-Mail-Adresse |
+| `IMAP_HOST` | Nein | – | Hostname des IMAP-Servers |
+| `IMAP_PORT` | Nein | `993` | IMAP-Port |
+| `IMAP_USER` | Nein | – | IMAP-Benutzername |
+| `IMAP_PASSWORD` | Nein | – | IMAP-Passwort |
+| `VAPID_PUBLIC_KEY` | Ja | – | Öffentlicher VAPID-Schlüssel für Browser-Push |
+| `VAPID_PRIVATE_KEY`| Ja | – | Privater VAPID-Schlüssel zur Signierung |
+| `VAPID_SUBJECT` | Ja | `mailto:admin@kcfallum.de` | Kontakt-URL/Mail für WebPush-Identifikation |

@@ -1,0 +1,80 @@
+---
+title: "Setting-Page"
+description: Detaillierte Dokumentation der Vereinseinstellungen (setting.page.ts, sections, settings.page.css)
+sidebar_position: 9
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import SettingPageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/setting/setting.page.ts?raw';
+import SettingCssSource from '../../../../../frontend/frontend-dashboard/src/components/pages/setting/settings.page.css?raw';
+import DesignSectionSource from '../../../../../frontend/frontend-dashboard/src/components/pages/setting/sections/design.section.ts?raw';
+import BeitragSectionSource from '../../../../../frontend/frontend-dashboard/src/components/pages/setting/sections/beitrag.section.ts?raw';
+
+# Setting-Page (`src/components/pages/setting/`)
+
+Die **Setting-Page** (`<setting-page>`) bündelt alle globalen Konfigurationen der Kegelclub-Plattform: Design-Tokens (Farben, Club-Logo), Strafenkatalog-Kategorien, Sortierregeln und monatliche Mitgliedsbeiträge.
+
+---
+
+## 1. Modularer Aufbau der Einstellungs-Domäne
+
+Um übermäßig große Monolith-Dateien zu vermeiden, teilt sich die Setting-Page in 4 Sub-Sektionen auf:
+
+```text
+src/components/pages/setting/
+├── setting.page.ts          # Hauptkomponente (TabsSwitch, HeaderActions, Tab-Routing)
+├── settings.page.css        # Layout & Tab-Styling via variables.css
+├── setting.page.spec.ts     # Komponententests für Tab-Wechsel und Sektionen
+└── sections/
+    ├── design.section.ts    # Farb-Tokens (--primary, --background) & Logo-Upload
+    ├── design.section.css   # Vorschau-Widget-Styles
+    ├── type.section.ts      # Strafenkatalog-Typen (Getränke, Runden, Disziplinar)
+    ├── katalog.section.ts   # Sortierung & Kategorisierung von Strafen
+    └── beitrag.section.ts   # Standard-Monatsbeitrag (€) & Stichtage
+```
+
+---
+
+## 2. Wie die Page gerendert wird (Tab-Orchestrierung)
+
+Die Seite verwendet `<tabs-switch>` für die Navigation ohne Seiten-Neuladen:
+
+1. **Aktiver Tab (`activeTab` State):** Steuert bedingt via `when()` die Einbindung der Sektionskomponente:
+   * `<design-section>`: Interaktive Farb-Picker (`<color-picker-input>`) und Logo-Upload via `mediaClient`.
+   * `<type-section>`: CRUD für Strafenkategorien.
+   * `<katalog-section>`: Drag-and-Drop Sortierung der Strafen.
+   * `<beitrag-section>`: Einstellung des monatlichen Regelbeitrags.
+2. **Dynamische Header-Aktionen:** Je nach aktuellem Tab rendert `renderHeaderAction()` spezifische Buttons (z.&nbsp;B. *"Neuer Typ"* oder *"Speichern"*).
+3. **Cache-Invalidierung via Reload-Keys:** Bei Speichern in einer Modalform wird `typeReloadKey` bzw. `katalogReloadKey` inkrementiert, um den internen `@lit/task` der Sektion neu zu triggern.
+
+---
+
+## 3. Live-Code: `setting.page.ts`
+
+<CodeBlock language="typescript" title="src/components/pages/setting/setting.page.ts" showLineNumbers>
+  {SettingPageSource}
+</CodeBlock>
+
+---
+
+## 4. Live-Code: `settings.page.css`
+
+<CodeBlock language="css" title="src/components/pages/setting/settings.page.css" showLineNumbers>
+  {SettingCssSource}
+</CodeBlock>
+
+---
+
+## 5. Live-Code: `sections/design.section.ts`
+
+<CodeBlock language="typescript" title="src/components/pages/setting/sections/design.section.ts" showLineNumbers>
+  {DesignSectionSource}
+</CodeBlock>
+
+---
+
+## 6. Live-Code: `sections/beitrag.section.ts`
+
+<CodeBlock language="typescript" title="src/components/pages/setting/sections/beitrag.section.ts" showLineNumbers>
+  {BeitragSectionSource}
+</CodeBlock>

@@ -1,0 +1,60 @@
+---
+title: "Strafen-Page"
+description: Detaillierte Dokumentation der Strafenverwaltung (strafen.page.ts, strafen.form.ts, strafe.service.ts)
+sidebar_position: 2
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import StrafenPageSource from '../../../../../frontend/frontend-dashboard/src/components/pages/strafen/strafen.page.ts?raw';
+import StrafenFormSource from '../../../../../frontend/frontend-dashboard/src/components/pages/strafen/strafen.form.ts?raw';
+
+# Strafen-Page (`src/components/pages/strafen/`)
+
+Die **Strafen-Page** (`<strafen-page>`) verwaltet alle im Verein verhängten Strafen, überwacht offene Forderungen und ermöglicht die Massenverwaltung von Bezahlstatus.
+
+---
+
+## 1. Die 5 Dateien der Strafen-Domäne
+
+```text
+src/components/pages/strafen/
+├── strafen.page.ts         # Page-Komponente mit Task & Virtualizer
+├── strafen.page.css        # Tabellen- und Filter-Styles
+├── strafen.form.ts         # StrafenFormService (Erfassungsmodal)
+├── strafen.page.spec.ts    # Komponententests
+└── (src/services/strafe.service.ts) # StrafeService (CRUD, Bezahlstatus)
+```
+
+---
+
+## 2. Wie die Page gerendert wird (Task & Virtualizer)
+
+1. **Reaktiver Task:** Lädt Strafdaten über `strafeClient.getStrafen()` bzw. `kasseClient`.
+2. **Filterung & Aggregation:** Ermöglicht die Filterung nach Spielern, Status (`offen` / `bezahlt`) und Kalenderjahren (`getYearDateRange`).
+3. **Virtuelles Rendering:** Nutzt `@lit-labs/virtualizer` für flüssiges Rendern von über tausend historischen Strafen ohne DOM-Überlastung.
+4. **Fehler- & Lade-Handling:** Zeigt `<skeleton-widget>` beim Filtern und `<error-widget>` bei Verbindungsabbrüchen.
+
+---
+
+## 3. Formular- & Modal-Logik (`strafen.form.ts`)
+
+Der ausgelagerte `StrafenFormService` ermöglicht das Anlegen und Bearbeiten von Strafen:
+* Lädt den aktuellen Katalog über `katalogClient.getAllKataloge()`.
+* Erlaubt die Auswahl von Spieler, Strafe und Multiplikator (`anzahl`).
+* Übergibt das validierte Payload an `StrafeService.create()`.
+
+---
+
+## 4. Live-Code: `strafen.page.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/strafen/strafen.page.ts">
+  {StrafenPageSource}
+</CodeBlock>
+
+---
+
+## 5. Live-Code: `strafen.form.ts`
+
+<CodeBlock language="typescript" title="frontend/frontend-dashboard/src/components/pages/strafen/strafen.form.ts">
+  {StrafenFormSource}
+</CodeBlock>

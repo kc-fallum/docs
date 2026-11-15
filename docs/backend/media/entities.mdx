@@ -1,0 +1,61 @@
+---
+title: "Media Service: Entitäten & Datenmodell"
+description: Live-Imports und Dokumentation aller 4 TypeORM-Entitäten der media-Datenbank
+sidebar_position: 2
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import MetadataSource from '../../../../backend/backend-media/src/models/entities/metadata.entity.ts?raw';
+import AlbumSource from '../../../../backend/backend-media/src/models/entities/album.entity.ts?raw';
+import PictureSource from '../../../../backend/backend-media/src/models/entities/picture.entity.ts?raw';
+import AccessSource from '../../../../backend/backend-media/src/models/entities/access.entity.ts?raw';
+
+# Media Entitäten (`media` DB)
+
+Alle Entitäten des Media Service verwalten Metadaten, Objektschlüssel und Zugriffsrechte für im S3-Speicher abgelegte Dateien.
+
+---
+
+## 1. `MetadataEntity`
+Generische Beschreibung jeder im S3 gespeicherten Datei.
+
+* **Felder:** `key` (eindeutiger S3-Objektschlüssel), `originalName`, `mimeType`, `size` (in Bytes), `hash` (SHA-256 zur Duplikaterkennung).
+
+<CodeBlock language="typescript" title="backend/backend-media/src/models/entities/metadata.entity.ts">
+  {MetadataSource}
+</CodeBlock>
+
+---
+
+## 2. `AlbumEntity`
+Organisiert Bilder in zusammenhängenden Sammlungen (z. B. nach Kegelausflügen oder Jubiläen).
+
+* **Felder:** `titel`, `beschreibung`, `erstellungsDatum`, `coverPictureId`.
+* **Beziehungen:** 1:n zu `PictureEntity`, 1:n zu `AccessEntity`.
+
+<CodeBlock language="typescript" title="backend/backend-media/src/models/entities/album.entity.ts">
+  {AlbumSource}
+</CodeBlock>
+
+---
+
+## 3. `PictureEntity`
+Repräsentiert ein konkretes Foto innerhalb der Vereinsgalerie.
+
+* **Felder:** `breite`, `hoehe`, `aufnahmeDatum`, `beschreibung`.
+* **Beziehungen:** n:1 zu `MetadataEntity`, n:1 zu `AlbumEntity`.
+
+<CodeBlock language="typescript" title="backend/backend-media/src/models/entities/picture.entity.ts">
+  {PictureSource}
+</CodeBlock>
+
+---
+
+## 4. `AccessEntity`
+Regelt granulare Freigaben für geschützte Medien und Alben.
+
+* **Felder:** `nutzerId`, `rolle`, `berechtigung` (`VIEW`, `EDIT`, `MANAGE`).
+
+<CodeBlock language="typescript" title="backend/backend-media/src/models/entities/access.entity.ts">
+  {AccessSource}
+</CodeBlock>

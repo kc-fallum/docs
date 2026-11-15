@@ -1,0 +1,8 @@
+{
+  "label": "Settings Service",
+  "position": 8,
+  "link": {
+    "type": "generated-index",
+    "description": "Zentrale Vereinskonfiguration, Farbschemata (Theming) und WebPush-Abonnement-Verwaltung"
+  }
+}

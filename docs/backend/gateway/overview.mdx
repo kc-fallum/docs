@@ -1,0 +1,51 @@
+---
+title: "API Gateway: Übersicht & Architektur"
+description: Architektur, Stateless-Proxy-Routing und WebSocket-Upgrade-Routing des backend-gateway
+sidebar_position: 1
+---
+
+import CodeBlock from '@theme/CodeBlock';
+import GatewayAppSource from '../../../../backend/backend-gateway/src/app.ts?raw';
+
+# API Gateway (`backend-gateway`)
+
+Das **API Gateway** ist die zentrale Eingangspforte für sämtlichen externen HTTP- und WebSocket-Traffic der Plattform. Es ist als **vollständig zustandsloser Proxy (Stateless)** konzipiert und besitzt bewusst keine eigene Datenbank.
+
+---
+
+## 1. Aufgaben & Schutzmechanismen
+
+* **Zentraler Reverse Proxy (`http-proxy-middleware`):** Verteilt eingehende REST-Aufrufe anhand des URL-Präfixes transparent an die internen Microservices.
+* **CORS- & Sicherheits-Header:** Schützt Clients mittels Helmet, restriktiven Content Security Policies (`csp.config.ts`) und strenger Origin-Prüfung (`cors.config.ts`).
+* **Rate-Limiting:** Blockiert Brute-Force- und Denial-of-Service-Angriffe durch zeitfensterbasierte IP-Drosselung.
+* **Cookie-Domain Rewriting:** Schreibt Authentifizierungs-Cookies auf die Root-Domain `.kcfallum.de` um, sodass Session-Cookies nahtlos über alle Subdomains (`sso.`, `dashboard.`, `gameserver.`) geteilt werden.
+* **Socket.io Upgrade-Routing:** Analysiert WebSocket-Handshakes und leitet die TCP-Verbindung an den zuständigen Backend-Dienst weiter.
+
+---
+
+## 2. Der Gateway-Routing-Aufbau
+
+```mermaid
+flowchart TD
+    INTERNET["Cloudflare Tunnel<br/>api.kcfallum.de"] --> GW["backend-gateway<br/>Port 3000"]
+
+    GW -->|/api/auth/*| AUTH["auth-service:3001"]
+    GW -->|/api/core/*| CORE["core-service:3000"]
+    GW -->|/api/media/*| MEDIA["media-service:3002"]
+    GW -->|/api/transaction/*| TRANS["transaction-service:3003"]
+    GW -->|/api/gameserver/*| GAME["gameserver-service:3004"]
+    GW -->|/api/setting/*| SETTING["settings-service:3005"]
+    GW -->|/api/email/*| EMAIL["email-service:3006"]
+
+    GW -.->|WS: /ws/auth| AUTH
+    GW -.->|WS: /ws/gameserver| GAME
+    GW -.->|WS: Default| CORE
+```
+
+---
+
+## 3. Live-Code: Gateway-Applikation (`app.ts`)
+
+<CodeBlock language="typescript" title="backend/backend-gateway/src/app.ts">
+  {GatewayAppSource}
+</CodeBlock>

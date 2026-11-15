@@ -1,0 +1,50 @@
+---
+title: "Galerie Portal: Lightbox & Upload-Pipeline"
+description: Fotogalerie und Medien-Upload (galerie.kcfallum.de) mit Drag-and-Drop Dropzone und WebP Lightbox
+sidebar_position: 1
+---
+
+# Galerie Portal (`frontend-media` / `frontend-galerie`)
+
+Das Submodul `frontend/frontend-media` stellt die Vereinsgalerie unter `https://galerie.kcfallum.de` (Port 8083) bereit. Es dient der Archivierung und Präsentation von Fotos vergangener Kegeltouren, Jubiläen und Vereinsabende.
+
+---
+
+## 1. Zweck & Funktionsumfang
+
+* **Albenübersicht:** Kachelansicht aller Fotoalben mit Titelbild und Bildzähler.
+* **Responsive Lightbox:** Vollbild-Ansicht von Fotos mit Zoomfunktion, Exif-Informationsanzeige und Tastaturnavigation (Pfeiltasten).
+* **Drag-and-Drop Upload:** Komfortables Hochladen mehrerer Fotos gleichzeitig direkt im Browser.
+* **Optimierte Auslieferung:** Verwendet moderne WebP-Thumbnails für schnelle Ladezeiten auf Mobilgeräten.
+* **Privatsphäre & Download:** Generierung von zeitlich befristeten Presigned Download-URLs über den Media-Service.
+
+---
+
+## 2. Der Galerie-Upload-Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Vereinsmitglied
+    participant Uploader as upload.widget.ts
+    participant Client as galleryClient
+    participant Media as backend-media (S3/MinIO)
+
+    User->>Uploader: Zieht 10 Fotos per Drag-and-Drop in die Dropzone
+    Uploader->>Uploader: Validiert MIME-Typen (image/jpeg, image/png, image/webp)
+    loop Für jedes Bild
+        Uploader->>Client: galleryClient.uploadPicture(albumId, file)
+        Client->>Media: POST /picture/upload (Multipart)
+        Media-->>Client: 201 Created (ID, WebP-Thumbnail)
+        Client-->>Uploader: Fortschrittsbalken aktualisieren (10% ... 100%)
+    end
+    Uploader->>User: NotificationHandler.success("10 Fotos erfolgreich hochgeladen!")
+```
+
+---
+
+## 3. Berechtigungs-Matrix
+
+* **Galerie einsehen (`galerie:view`):** Alle registrierten Mitglieder und freigeschaltete Gäste.
+* **Fotos hochladen (`galerie:create`):** Alle aktiven Vereinsmitglieder.
+* **Alben verwalten & löschen (`galerie:manage`):** Nur Administratoren und Event-Organisatoren.

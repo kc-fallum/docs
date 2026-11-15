@@ -1,0 +1,74 @@
+---
+title: "Gameservice: Konfigurations-Referenz"
+description: Detaillierte Aufschlüsselung aller Config-Dateien und Umgebungsvariablen von backend-gameservice
+sidebar_position: 4
+---
+
+# Gameservice: Konfigurations-Referenz
+
+Dieses Dokument bietet eine vollständige Referenz aller Konfigurationsdateien und Umgebungsvariablen des `backend-gameservice`.
+
+---
+
+## 1. Konfigurationsdateien im Detail
+
+### 1.1 `src/config/gameserver.config.ts`
+Zentrale Laufzeit- und Ressourcenparameter für Gaming-Container:
+
+| Parameter | Standardwert | Beschreibung |
+|---|---|---|
+| `SERVERS_BASE_DIR` | `/data/servers` | Basisverzeichnis für Minecraft-Welten auf dem Host |
+| `TEMPLATES_DIR` | `./templates` | Vorkonfigurierte Plugin- und Weltvorlagen |
+| `DEFAULT_LOBBY_PORT` | `25600` | Start-Portbereich für dynamische Server-Instanzen |
+| `CONTAINER_PREFIX` | `kc-gameserver` | Docker-Container-Namenspräfix |
+| `MINIO_BUCKET_NAME` | `kcfallum-gameserver` | S3-Bucket für Restic-Weltensicherungen |
+| `MAX_RUNNING_SERVERS` | `2` | Gleichzeitig aktive Server-Instanzen (Ressourcenschutz) |
+| `IMAGE_MINECRAFT_JAVA` | `itzg/minecraft-server` | Basis-Image für PaperMC Java-Instanzen |
+| `IMAGE_MINECRAFT_BEDROCK` | `itzg/minecraft-bedrock-server` | Basis-Image für Bedrock-Server |
+| `IMAGE_RESTIC` | `restic/restic:latest` | Container-Image für Backup-Snapshots |
+| `CONTAINER_MEMORY_LIMIT`| `10 GB` (`10737418240`) | Maximaler Host-Arbeitsspeicher pro Container |
+| `SERVER_INIT_MEMORY` | `2G` | Initialer Java-Heap (`-Xms`) |
+| `SERVER_MAX_MEMORY` | `8G` | Maximaler Java-Heap (`-Xmx`) |
+| `CONTAINER_STORAGE_LIMIT`| `20G` | Maximales Speicherplatzkontingent pro Instanz |
+| `MAX_UPLOAD_FILE_SIZE_BYTES` | `150 MB` | Maximale Uploadgröße für Welten/Addons |
+
+---
+
+### 1.2 `src/config/gamerules.config.ts`
+Definiert erlaubte Minecraft-Gamerules und Typ-Validierungen (z. B. `keepInventory: boolean`, `randomTickSpeed: number`, `spawnRadius: number`).
+
+---
+
+### 1.3 `src/config/restic.config.ts`
+Konfiguriert den differenziellen Sicherungsmechanismus:
+* **Retention Policy:** Behält standardmäßig die letzten 7 täglichen und 4 wöchentlichen Snapshots (`--keep-daily 7 --keep-weekly 4`).
+* **Kompression:** Verwendet Zstandard (`zstd`) für minimale Speicherauslastung im MinIO-Bucket.
+
+---
+
+### 1.4 `config/socket.config.ts`
+Ermöglicht bidirektionales Streaming zwischen der Web-Konsole und dem Docker-Container:
+* Prüft beim WebSocket-Handshake die Berechtigung `gameserver:console`.
+* Bindet Socket-Events an den RCON- und Dockerode-Stream.
+
+---
+
+## 2. Umgebungsvariablen (`.env`)
+
+| Variable | Erforderlich | Standard | Beschreibung |
+|---|---|---|---|
+| `PORT` | Nein | `3004` | HTTP-Port für Gameservice |
+| `DB_HOST` | Ja | – | Hostname der PostgreSQL-Instanz |
+| `DB_PORT` | Nein | `5432` | PostgreSQL-Port |
+| `DB_DATABASE` | Ja | `kegelclub` | PostgreSQL-Datenbank |
+| `DOCKER_SOCKET_PATH` | Ja | `/var/run/docker.sock` | UNIX-Socket zur Host-Docker-Steuerung |
+| `SERVERS_BASE_DIR` | Nein | `/data/servers` | Host-Verzeichnis für Server-Instanzen |
+| `MINIO_INTERNAL_ENDPOINT`| Ja | `http://minio:9000` | S3-Endpunkt für Weltensicherungen |
+| `GAMESERVER_RCON_SECRET`| Ja | – | Geheimes Passwort für Server-RCON |
+| `LOBBY_RCON_HOST` | Nein | `lobby-server` | Hostname des primären Lobby-Containers |
+| `LOBBY_RCON_PORT` | Nein | `25575` | RCON-Port des Lobby-Servers |
+| `RESTIC_SECRET` | Ja | – | Verschlüsselungspasswort für Restic-Repositories |
+| `VELOCITY_SECRET` | Ja | – | Forwarding-Secret für den Velocity-Proxy |
+| `BESZEL_URL` | Nein | `http://beszel:8090` | Endpunkt des Beszel-Monitoring-Servers |
+| `BESZEL_USER` | Nein | – | Beszel Admin-Benutzer |
+| `BESZEL_PASS` | Nein | – | Beszel Admin-Passwort |

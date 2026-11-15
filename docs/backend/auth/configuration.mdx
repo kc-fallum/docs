@@ -1,0 +1,75 @@
+---
+title: "Auth & Identity Service: Konfigurations-Referenz"
+description: Detaillierte Aufschlüsselung aller Config-Dateien und Umgebungsvariablen von backend-auth
+sidebar_position: 4
+---
+
+# Auth & Identity Service: Konfigurations-Referenz
+
+Dieses Dokument bietet eine vollständige Referenz aller Konfigurationsdateien und Umgebungsvariablen des `backend-auth`.
+
+---
+
+## 1. Konfigurationsdateien im Detail
+
+### 1.1 `src/config/oidc.config.ts`
+Konfiguriert den integrierten OpenID Connect Provider:
+* **Issuer URL:** Exponiert unter `${SERVER_BASE_URL}/oidc`.
+* **Client-Definitionen:**
+  * Unterstützt dynamische Client-Registrierungen.
+  * Integriert standardmäßig den **Beszel-Monitoring Client**:
+    ```typescript
+    {
+      clientId: "beszel",
+      clientSecret: getEnv("BESZEL_OIDC_CLIENT_SECRET"),
+      redirectUris: [getEnv("BESZEL_REDIRECT_URI")],
+      requiredPermission: { resource: "status", action: "view" }
+    }
+    ```
+  * Erzwingt bei Token-Anforderung, dass der authentifizierte Benutzer über die Berechtigung `status:view` verfügt.
+
+---
+
+### 1.2 `config/passport.config.ts`
+Initialisiert Passport-Strategien für externe Identity Provider:
+* **Google OAuth20:**
+  * Liest `GOOGLE_CLIENT_ID` und `GOOGLE_CLIENT_SECRET`.
+  * Konfiguriert den Callback-Endpunkt `/auth/google/callback`.
+  * Mappt verifizierte Google-Profile auf bestehende oder neu erstellte `NutzerEntity`-Datensätze.
+
+---
+
+### 1.3 `config/cron.config.ts`
+Regelmäßige Bereinigungs- und Wartungsjobs (`node-cron`):
+* **Session Cleanup:** Bereinigt abgelaufene Redis-Keys und verwaiste temporäre Anmelde-Challenges.
+* **Token Pruning:** Entfernt abgelaufene Einmal-Verifikationstoken aus der Datenbank.
+
+---
+
+### 1.4 `config/socket.config.ts`
+Verwaltet die WebSocket-Verbindung für interaktive Logins (z. B. QR-Code-Login oder Live-Passkey-Freigabe).
+
+---
+
+## 2. Umgebungsvariablen (`.env`)
+
+| Variable | Erforderlich | Standard | Beschreibung |
+|---|---|---|---|
+| `PORT` | Nein | `3001` | HTTP-Port für Auth-Service |
+| `DB_HOST` | Ja | – | PostgreSQL-Host |
+| `DB_PORT` | Nein | `5432` | PostgreSQL-Port |
+| `DB_DATABASE` | Ja | `auth` | Name der Authentifizierungs-Datenbank |
+| `DB_USERNAME` | Ja | – | PostgreSQL-Benutzer |
+| `DB_PASSWORD` | Ja | – | PostgreSQL-Passwort |
+| `REDIS_HOST` | Ja | `redis` | Hostname der Redis-Instanz für Sessions |
+| `REDIS_PORT` | Nein | `6379` | Port der Redis-Instanz |
+| `JWT_SECRET` | Ja | – | Signaturschlüssel für Access-Tokens |
+| `SESSION_SECRET` | Ja | – | Geheimnis für Cookie- und Session-Signierung |
+| `COOKIE_DOMAIN` | Nein | `.kcfallum.de` | Domain-Scope für HTTP-Only Cookies |
+| `WEBAUTHN_RP_ID` | Ja | `kcfallum.de` | Relying Party ID für WebAuthn |
+| `WEBAUTHN_RP_NAME` | Nein | `KC Fallum` | Anzeigename in der Biometrie-Aufforderung |
+| `WEBAUTHN_ORIGIN` | Ja | `https://sso.kcfallum.de` | Erlaubter Origin für Passkey-Signaturen |
+| `GOOGLE_CLIENT_ID` | Nein | – | OAuth2 Client-ID von Google Cloud |
+| `GOOGLE_CLIENT_SECRET` | Nein | – | OAuth2 Client-Secret von Google Cloud |
+| `BESZEL_OIDC_CLIENT_SECRET` | Nein | – | OIDC-Client-Secret für Beszel-Monitoring |
+| `BESZEL_REDIRECT_URI` | Nein | – | Erlaubte Weiterleitungs-URI für Beszel OIDC |
